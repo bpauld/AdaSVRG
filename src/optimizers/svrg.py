@@ -10,22 +10,19 @@ class SVRG(torch.optim.Optimizer):
     Parameters:
         full_grad_closure: a PyTorch-style closure function that computes the full loss + gradient.
     '''
-    def __init__(self, model, batch_size, lr, n, full_grad_closure, 
-                m=0, splr_flag=False, c=None):
+    def __init__(self, model, batch_size, lr, n, full_grad_closure, m=0):
         if m == 0:
             m = n
         self.n_batches_per_epoch = m
         defaults = dict(batch_size=batch_size, lr=lr, m=m, n=n)
         super().__init__(model.parameters(), defaults)
-
-        self.splr_flag = splr_flag
+        
         self.full_grad_closure = full_grad_closure
         self.model = model
         self.state['step'] = 0
         self.state['lr'] = lr
         self.state['step_size'] = lr
-        self.c = c
-
+        
         self.x_tilde_model = copy.deepcopy(model)
 
         self.state['forward_calls'] = 0
@@ -51,29 +48,11 @@ class SVRG(torch.optim.Optimizer):
         with torch.no_grad():
             
             for i, group in enumerate(self.param_groups):
-                for j, p in enumerate(group['params']):
+                for j, p in enumerate(group['params']):                    
                     # update model parameters using SVRG update:
-                    g_list = (p.grad - x_tilde[i]['params'][j].grad + 
-                                self.state['full_grad'][i][j])
+                    g_list = (p.grad - x_tilde[i]['params'][j].grad + self.state['full_grad'][i][j])
                     
-                    if self.splr_flag == 'basic':
-                        g_norm = torch.norm(g_list)
-                        # g_norm = torch.norm(p.grad)
-                        splr_eta = (x_loss) / (self.c * g_norm**2)
-                        
-                        eta = max(splr_eta.item(), self.state['lr'])
-                        # print('splr eta', splr_eta.item())
-
-                    elif self.splr_flag == 'smooth_iter':
-                        g_norm = torch.norm(g_list)
-                        # g_norm = torch.norm(p.grad)
-                        splr_eta = (x_loss) / (self.c * g_norm**2)
-                        coeff = 2**(1./self.n_batches_per_epoch)
-                        eta = min(coeff * self.state['step_size'], 
-                                    splr_eta.item())
-                        # print('splr eta', splr_eta.item())
-                    else:
-                        eta = self.state['lr']
+                    eta = self.state['lr']
 
                     p.data = (p.data - eta * g_list)
 
