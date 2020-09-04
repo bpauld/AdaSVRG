@@ -4,31 +4,18 @@
 
 <h1 align="center">SVRG</h1>
 
-## Install requirements
-`pip install -r requirements.txt` 
-
+## Install haven
+```
+pip install --upgrade git+https://github.com/ElementAI/haven` 
+```
 
 ## Experiments
+Specify the experiments in exp_configs.py
 
-Run the experiments for the paper using the commands below:
-
-### Synthetic and Kernels
-
-Use trainval_svrg for SVRG, and trainval for all other optimizers. 
-
+Run the experiments using:
 ```
-python trainval.py -e adaptive_II_syn adaptive_II_kernels -d <datadir> -sb <savedir_base>  -r 1 -c <enable_cuda>
-python trainval_svrg.py -e adaptive_II_syn adaptive_II_kernels -d <datadir> -sb <savedir_base>  -r 1 -c <enable_cuda>
+python trainval.py -e exp1 -d ./data -sb ./results  -r 1
 ```
-where `<datadir>` is where the data is saved (example `.tmp/data`),  `<savedir_base>` is where the results will be saved (example `.tmp/results`), and `<enable_cuda>` is either 0 or 1. It is 1 if the user enables cuda.
-
 
 ## Results
-
-View results by running the following command.
-
-```
-python trainval.py -e adaptive_III_mnist -v 1 -d <datadir> -sb <savedir_base>
-```
-
-where `<datadir>` is where the data is saved, and `<savedir_base>` is where the results will be saved.
+View results by using the plotting notebook. 
