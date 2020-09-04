@@ -26,48 +26,19 @@ def load_libsvm(name, data_dir):
     return [X, y]
 
 
-def data_load(data_dir, dataset_num, n=0, d=0, margin=1e-6, false_ratio=0, is_subsample=0, is_kernelize=0,
+def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0, is_subsample=0, is_kernelize=0,
               test_prop=0.2, split_seed=9513451):
-    if dataset_num == 0:
-        data_name = 'quantum'
-
-    elif dataset_num == 1:
-        data_name = 'rcv1'
-
-    elif dataset_num == 2:
-        data_name = 'protein'
-
-    elif dataset_num == 3:
-        data_name = 'news'
-
-    elif dataset_num == 4:
-        data_name = 'mushrooms'
-
-    elif dataset_num == 5:
-        data_name = 'splice'
-
-    elif dataset_num == 6:
-        data_name = 'ijcnn'
-
-    elif dataset_num == 7:
-        data_name = 'w8a'
-
-    elif dataset_num == 8:
-        data_name = 'covtype'
-
-    elif dataset_num == -1:
-        data_name = 'synthetic'
-
-    if (dataset_num >= 0):
+    
+    if (dataset_name != 'synthetic'):
 
         # real data
         #         data = pickle.load(open(data_dir + data_name +'.pkl', 'rb'), encoding = "latin1")
-        data = load_libsvm(data_name, data_dir='./')
+        data = load_libsvm(dataset_name, data_dir='./')
 
         # load real dataset
         A = data[0].toarray()
 
-        if dataset_num < 4:
+        if dataset_name in ['quantum', 'rcv1', 'protein', 'news']:
             y = data[1].toarray().ravel()
         else:
             y = data[1]
@@ -75,11 +46,6 @@ def data_load(data_dir, dataset_num, n=0, d=0, margin=1e-6, false_ratio=0, is_su
     else:
 
         A, y, w_true = create_dataset(n, d, margin, false_ratio)
-
-        # generate synthetic data - according to the BB paper
-    #         x = np.random.randn(n, d)
-    #         w_true = np.random.randn(d)
-    #         y = np.sign(np.dot(x, w_true))
 
     # subsample
     if is_subsample == 1:
@@ -91,20 +57,20 @@ def data_load(data_dir, dataset_num, n=0, d=0, margin=1e-6, false_ratio=0, is_su
 
     if is_kernelize == 1:
         # Form kernel
-        A_train, A_test = kernelize(X_train, X_test, dataset_num, data_dir=data_dir)
+        A_train, A_test = kernelize(X_train, X_test, dataset_name, data_dir=data_dir)
     else:
         A_train = X_train
         A_test = X_test
 
-    print('Loaded ', data_name, ' dataset.')
+    print('Loaded ', dataset_name, ' dataset.')
 
     return A_train, y_train, A_test, y_test
 
 
-def kernelize(X, X_test, dataset_num, kernel_type=0, data_dir="./Data"):
+def kernelize(X, X_test, dataset_name, kernel_type=0, data_dir="./Data"):
     n = X.shape[0]
 
-    fname = data_dir + '/Kernel_' + str(n) + '_' + str(dataset_num) + '.p'
+    fname = data_dir + '/Kernel_' + str(n) + '_' + str(dataset_name) + '.p'
 
     if os.path.isfile(fname):
 

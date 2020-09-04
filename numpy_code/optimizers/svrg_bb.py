@@ -2,19 +2,11 @@ from dependencies import *
 
 from utils import *
 from datasets import *
-from plotting import *
 from objectives import *
 
 
-def compute_statistic(term1, term2, t, x, g, eta, eps = 1e-4):
-
-    term1 = 1.0/t * ((t - 1) * term1 + eta * np.dot(x,g))
-    term2 = 1.0/t * ((t - 1) * term2 + (eta**2/2) * np.dot(g, g))
-
-    return term1, term2
-
-
-def svrg_bb(closure, batch_size, D, labels, init_step_size, n, d, max_epoch=100, m=0, x0=None, verbose=True, adaptive_termination = False):
+def svrg_bb(score_list, closure, batch_size, D, labels, 
+            init_step_size, max_epoch=100, m=0, x0=None, verbose=True, adaptive_termination = False):
     """
         SVRG with Barzilai-Borwein step size for solving finite-sum problems
         Closure: a PyTorch-style closure returning the objective value and it's gradient.
@@ -24,6 +16,9 @@ def svrg_bb(closure, batch_size, D, labels, init_step_size, n, d, max_epoch=100,
         init_step_size: initial step size
         n, d: size of the problem
     """
+    n = D.shape[0]
+    d = D.shape[1]
+
     if not isinstance(m, int) or m <= 0:
         m = n
         if verbose:
@@ -37,11 +32,6 @@ def svrg_bb(closure, batch_size, D, labels, init_step_size, n, d, max_epoch=100,
         raise ValueError('x0 must be a numpy array of size (d, )')
 
     step_size = init_step_size
-
-    LOSS = []
-    GRAD_NORM = []
-    GRAD_EVALS = []
-
     num_grad_evals = 0
 
     for k in range(max_epoch):
@@ -71,16 +61,16 @@ def svrg_bb(closure, batch_size, D, labels, init_step_size, n, d, max_epoch=100,
         # Add termination condition based on the norm of full gradient
         # Without this, "np.dot(s, y)" can underflow and produce divide-by-zero errors.
         if np.linalg.norm(full_grad) <= 1e-10:
-            GRAD_EVALS[k+1:max_epoch] = [0] * (max_epoch - k)
-            LOSS[k + 1:max_epoch] = [0] * (max_epoch - k)
-            GRAD_NORM[k + 1:max_epoch] = [0] * (max_epoch - k)
-            return x, GRAD_EVALS, LOSS, GRAD_NORM
+            return score_list
 
         num_grad_evals = num_grad_evals + n
 
-        GRAD_EVALS.append(num_grad_evals)
-        LOSS.append(loss)
-        GRAD_NORM.append(np.linalg.norm(full_grad))
+        score_dict = {"epoch": k}
+        score_dict["n_grad_evals"] = num_grad_evals
+        score_dict["loss"] = loss
+        score_dict["grad_norm"] = np.linalg.norm(full_grad)
+
+        score_list += [score_dict]
 
         # Create Minibatches:
         minibatches = make_minibatches(n, m, batch_size)
@@ -105,7 +95,4 @@ def svrg_bb(closure, batch_size, D, labels, init_step_size, n, d, max_epoch=100,
 
             x -= step_size * gk
 
-    GRAD_EVALS = np.asarray(GRAD_EVALS)
-    LOSS = np.asarray(LOSS)
-    GRAD_NORM = np.asarray(GRAD_NORM)
-    return x, GRAD_EVALS, LOSS, GRAD_NORM
+    return score_list

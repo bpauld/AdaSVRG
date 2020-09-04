@@ -1,0 +1,17 @@
+{
+    "batch_size": 100,
+    "d": 20,
+    "dataset": "synthetic",
+    "false_ratio": 0.25,
+    "loss_func": "logistic_loss",
+    "margin": 1e-06,
+    "max_epoch": 50,
+    "n_samples": 1000,
+    "opt": {
+        "adaptive_termination": false,
+        "init_step_size": 0.001,
+        "m": 0.0,
+        "name": "svrg_bb"
+    },
+    "runs": 0
+}
