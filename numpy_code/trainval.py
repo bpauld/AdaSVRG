@@ -84,8 +84,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 			d = n
 		else:
 			d = 0
-		d = 0
-		n = 0
+
 		X, y, X_test, y_test = data_load(data_dir, exp_dict["dataset"] , n, d, false_ratio, is_subsample, is_kernelize)
 		n = X.shape[0]
 	    
