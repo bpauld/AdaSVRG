@@ -1,2 +1,3 @@
 ./numpy_code/results/*
-./numpy_code/data/*
+./numpy_code/results/*
+./numpy_code/.ipynb_checkpoints/*
