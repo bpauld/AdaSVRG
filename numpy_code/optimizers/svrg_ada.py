@@ -22,7 +22,7 @@ def armijo_ls(closure, D, labels, x, loss, grad, init_step_size, c, beta):
 
 
 def svrg_ada(score_list, closure, batch_size, D, labels, 
-            init_step_size, max_epoch=100, m=0, x0=None, verbose=True,
+            init_step_size, max_epoch=100, r=0, x0=None, verbose=True,
             linesearch_option = 0, max_sgd_warmup_epochs= 0,  adaptive_termination = False):
     """
         SVRG with fixed step size for solving finite-sum problems
@@ -35,11 +35,13 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
     """
     n = D.shape[0]
     d = D.shape[1]
-
-    if not isinstance(m, int) or m <= 0:
+    if r <= 0:
         m = n
         if verbose:
             print('Info: set m=n by default')
+    else:
+        m = int(r * n)
+        print('Info: set m = ', r, ' n')
 
     if x0 is None:
         x = np.zeros(d)
@@ -170,8 +172,8 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
                 num_grad_evals = num_grad_evals + batch_size * armijo_iter
 
             if adaptive_termination == True:
-                if (i+1) == int(m/2.):
-                    term1, term2 = compute_statistic(term1, term2, (i+1), x, gk, step_size)
+                if (i+1) == int(n/2.):
+                    term1, term2 = compute_pflug_statistic(term1, term2, (i+1), x, gk, step_size)
                     if (np.abs(term1 - term2)) < 1e-8:
                         print('Test passed. Breaking out of inner loop')
                         break

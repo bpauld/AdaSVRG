@@ -6,7 +6,7 @@ from objectives import *
 
 
 def svrg_bb(score_list, closure, batch_size, D, labels, 
-            init_step_size, max_epoch=100, m=0, x0=None, verbose=True, adaptive_termination = False):
+            init_step_size, max_epoch=100, r=0, x0=None, verbose=True, adaptive_termination = False):
     """
         SVRG with Barzilai-Borwein step size for solving finite-sum problems
         Closure: a PyTorch-style closure returning the objective value and it's gradient.
@@ -19,10 +19,13 @@ def svrg_bb(score_list, closure, batch_size, D, labels,
     n = D.shape[0]
     d = D.shape[1]
 
-    if not isinstance(m, int) or m <= 0:
+    if r <= 0:
         m = n
         if verbose:
             print('Info: set m=n by default')
+    else:
+        m = int(r * n)
+        print('Info: set m = ', r, ' n')
 
     if x0 is None:
         x = np.zeros(d)
@@ -87,8 +90,8 @@ def svrg_bb(score_list, closure, batch_size, D, labels,
             gk = x_grad - x_tilde_grad + full_grad
 
             if adaptive_termination == True:
-                if (i+1) == int(m/2.):
-                    term1, term2 = compute_statistic(term1, term2, (i+1), x, gk, step_size)
+                if (i+1) == int(n/2.):
+                    term1, term2 = compute_pflug_statistic(term1, term2, (i+1), x, gk, step_size)
                     if (np.abs(term1 - term2)) < 1e-8:
                         print('Test passed. Breaking out of inner loop')
                         break

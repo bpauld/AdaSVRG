@@ -74,31 +74,30 @@ def trainval(exp_dict, savedir_base, reset=False):
 	    false_ratio = 0.25	    
 	    margin = exp_dict["margin"]	    
 	    X, y, X_test, y_test = data_load(data_dir, exp_dict["dataset"],n, d, margin, false_ratio)
-
 	else:
-	    if is_subsample == 1:
-	        n = subsampled_n
-	    else:
-	        n = 0
+		if is_subsample == 1:
+			n = subsampled_n
+		else:	
+			n = 0
 
-	    if is_kernelize == 1:
-	        d = n
-	    else:
-	        d = 0
-	    
-	    A, y, A_test, y_test = data_load(data_dir, dataset_num, n,d, false_ratio, is_subsample, is_kernelize)
-	    	    
+		if is_kernelize == 1:
+			d = n
+		else:
+			d = 0
+		d = 0
+		n = 0
+		X, y, X_test, y_test = data_load(data_dir, exp_dict["dataset"] , n, d, false_ratio, is_subsample, is_kernelize)
+		n = X.shape[0]
 	    
 	#define the regularized losses we will use
 	if exp_dict["loss_func"] == "logistic_loss":
-		closure = make_closure(logistic_loss, 1/n)
+		closure = make_closure(logistic_loss, 1./n)
 	elif closure["loss_func"] == "squared_hinge_loss":
-		squared_hinge_closure_l2 = make_closure(squared_hinge_loss, 1/n)
+		squared_hinge_closure_l2 = make_closure(squared_hinge_loss, 1./n)
 	elif exp_dict["loss_func"] == "squared_loss":
-		closure = make_closure(squared_loss, 1/n)
+		closure = make_closure(squared_loss, 1./n)
 	else:
 		print("Not a valid loss")
-
 
 	# check if score list exists 
 	if os.path.exists(score_list_path):
@@ -119,28 +118,28 @@ def trainval(exp_dict, savedir_base, reset=False):
 
 
 	    init_step_size = opt_dict["init_step_size"]
-	    m = opt_dict["init_step_size"]
+	    r = opt_dict["r"]
 	    adaptive_termination = opt_dict["adaptive_termination"]
 
 	    score_list = svrg(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               
                            D=X, labels=y,
-                           init_step_size=init_step_size, m=m, adaptive_termination= adaptive_termination)
+                           init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination)
 
 
 	elif opt_dict["name"] in ['svrg_bb']:		
 
 		init_step_size = opt_dict["init_step_size"]
-		m = opt_dict["init_step_size"]
+		r = opt_dict["r"]
 		adaptive_termination = opt_dict["adaptive_termination"]
 		score_list = svrg_bb(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               
                            D=X, labels=y,
-                           init_step_size=init_step_size, m=m, adaptive_termination= adaptive_termination)
+                           init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination)
 
 	elif opt_dict["name"] == 'svrg_ada':
 		init_step_size = opt_dict["init_step_size"]
-		m = opt_dict["init_step_size"]
+		r = opt_dict["r"]
 		adaptive_termination = opt_dict["adaptive_termination"]
 		linesearch_option = opt_dict["linesearch_option"]
 		max_sgd_warmup_epochs= opt_dict["max_sgd_warmup_epochs"]
@@ -148,7 +147,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 		score_list = svrg_ada(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               
                            D=X, labels=y,
-                           init_step_size=init_step_size, m=m, adaptive_termination= adaptive_termination)
+                           init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination)
 
 	else:
 		print('Method does not exist')

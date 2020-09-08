@@ -6,7 +6,7 @@ from objectives import *
 
 
 def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=100, 
-         m=0, x0=None, verbose=True, adaptive_termination = False):
+         r=0, x0=None, verbose=True, adaptive_termination = False):
     """
         SVRG with fixed step size for solving finite-sum problems
         Closure: a PyTorch-style closure returning the objective value and it's gradient.
@@ -20,10 +20,13 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
     d = D.shape[1]
 
     step_size = init_step_size
-    if not isinstance(m, int) or m <= 0:
+    if r <= 0:
         m = n
         if verbose:
             print('Info: set m=n by default')
+    else:
+        m = int(r * n)
+        print('Info: set m = ', r, ' n')
 
     if x0 is None:
         x = np.zeros(d)
@@ -35,6 +38,11 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
     num_grad_evals = 0
 
     for k in range(max_epoch):
+
+        if num_grad_evals >= 2 * n * max_epoch:
+            # exceeds the number of standard SVRG gradient evaluations (only for batch-size = 1)
+            print('End of budget for gradient evaluations')
+            break
 
         loss, full_grad = closure(x, D, labels)
         x_tilde = x.copy()
@@ -52,6 +60,9 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
             output += ', Num gradient evaluations: %d' % num_grad_evals
             print(output)
 
+
+        if np.linalg.norm(full_grad) <= 1e-10:
+            break
 
         num_grad_evals = num_grad_evals + n
 
@@ -76,10 +87,11 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
             num_grad_evals = num_grad_evals + batch_size
 
             if adaptive_termination == True:
-                if (i+1) == int(m/2.):
-                    term1, term2 = compute_statistic(term1, term2, (i+1), x, gk, step_size)
-                    if (np.abs(term1 - term2)) < 1e-8:
-                        print('Test passed. Breaking out of inner loop')
+                if (i+1) >= int(n/2.): # evaluate the statistic halfway through the inner loop
+                    term1, term2 = compute_pflug_statistic(term1, term2, (i+1), x, gk, step_size)
+                    if (np.abs(term1 - term2)) < 1e-10:
+                        print('Test passed. Breaking out of inner loop at iteration ', (i+1))
+                        x -= step_size * gk
                         break
             x -= step_size * gk
     
