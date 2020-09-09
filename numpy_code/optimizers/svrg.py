@@ -6,7 +6,7 @@ from objectives import *
 
 
 def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=100, 
-         r=0, x0=None, verbose=True, adaptive_termination = False):
+         r=0, x0=None, verbose=True, adaptive_termination = 0):
     """
         SVRG with fixed step size for solving finite-sum problems
         Closure: a PyTorch-style closure returning the objective value and it's gradient.
@@ -37,12 +37,30 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
 
     num_grad_evals = 0
 
+
+    if adaptive_termination == 2:
+        # hardcoding these parameters for now. 
+        q = 1.5
+        k0 = 5                
+        num_checkpoints = 20 # number of times to check
+        threshold  = 0.6
+
+        start = int(q**(k0))
+            
+        check_iter_indices = list(map(int,  list(np.linspace(start, m, num_checkpoints))))
+        save_iter_indices = list(map(int, np.linspace(start, m, num_checkpoints) / q))
+        print(check_iter_indices, save_iter_indices)
+                    
     for k in range(max_epoch):
 
         if num_grad_evals >= 2 * n * max_epoch:
             # exceeds the number of standard SVRG gradient evaluations (only for batch-size = 1)
             print('End of budget for gradient evaluations')
             break
+
+        if adaptive_termination == 2:
+            save_dist = np.zeros((num_checkpoints)) 
+            checkpoint_num = 0
 
         loss, full_grad = closure(x, D, labels)
         x_tilde = x.copy()
@@ -86,13 +104,35 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
             gk  = x_grad - x_tilde_grad + full_grad
             num_grad_evals = num_grad_evals + batch_size
 
-            if adaptive_termination == True:
+            if adaptive_termination == 1:
                 if (i+1) >= int(n/2.): # evaluate the statistic halfway through the inner loop
                     term1, term2 = compute_pflug_statistic(term1, term2, (i+1), x, gk, step_size)
                     if (np.abs(term1 - term2)) < 1e-10:
                         print('Test passed. Breaking out of inner loop at iteration ', (i+1))
                         x -= step_size * gk
                         break
+
+            if adaptive_termination == 2:
+
+                if (i+1) in (save_iter_indices):                    
+                    save_dist[checkpoint_num] = np.linalg.norm(x - x_tilde)
+                    checkpoint_num += 1
+            
+                elif ((i+1) in check_iter_indices):
+               
+                    t1 = i+1
+                                
+                    ind = check_iter_indices.index(i+1)                    
+                    x_prev_dist = save_dist[ind]
+                    x_dist = np.linalg.norm(x - x_tilde)
+                    t2 = save_iter_indices[ind]
+                    S = (np.log(x_dist**2) - np.log(x_prev_dist**2)) / (np.log(t1) - np.log(t2))
+                    # print('S = ', S)
+                    if S < threshold:
+                        x -= step_size * gk
+                        print('Test passed. Breaking out of inner loop at iteration ', (i+1))
+                        break
+
             x -= step_size * gk
     
     return score_list

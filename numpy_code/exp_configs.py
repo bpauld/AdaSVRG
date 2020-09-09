@@ -4,15 +4,21 @@ import itertools
 EXP_GROUPS = {}
 
 opt_list = [
-			{'name':'svrg',             
-            'init_step_size':1e-3,
-            "r":2.,
-            "adaptive_termination": True},
 
             {'name':'svrg',             
-            'init_step_size':1e-3,
+            'init_step_size':1e-1,
             "r":0.,
-            "adaptive_termination": False},
+            "adaptive_termination": 0},
+
+            {'name':'svrg',             
+            'init_step_size':1e-1,
+            "r":2.,
+            "adaptive_termination": 2},
+
+			{'name':'svrg',             
+            'init_step_size':1e-1,
+            "r":2.,
+            "adaptive_termination": 1},
 
             # {'name':'svrg_bb',  
             # 'init_step_size':1e-3,

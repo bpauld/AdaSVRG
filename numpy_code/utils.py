@@ -112,19 +112,3 @@ def compute_pflug_statistic(term1, term2, t, x, g, eta):
     term2 = 1.0/t * ((t - 1) * term2 + (eta**2/2) * np.dot(g, g))
 
     return term1, term2
-
-
-
-def compute_rate_statistic(x1, x2, w, t1, t2):
-
-    d1 = np.log( np.linalg.norm(x1 - w)**2 )
-    d2 = np.log( np.linalg.norm(x2 - w)**2 )
-
-    num = np.log( np.linalg.norm(x1 - w)**2 ) - np.log( np.linalg.norm(x2 - w)**2 )
-    denom = np.log(t1) - np.log(t2)
-
-    return num / denom
-
-
-    
-    return term1, term2
