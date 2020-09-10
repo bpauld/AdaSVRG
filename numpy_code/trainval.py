@@ -92,7 +92,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 	regularization_factor = exp_dict["regularization_factor"]
 	if exp_dict["loss_func"] == "logistic_loss":
 		closure = make_closure(logistic_loss, regularization_factor)
-	elif closure["loss_func"] == "squared_hinge_loss":
+	elif exp_dict["loss_func"] == "squared_hinge_loss":
 		closure = make_closure(squared_hinge_loss, regularization_factor)
 	elif exp_dict["loss_func"] == "squared_loss":
 		closure = make_closure(squared_loss, regularization_factor)
