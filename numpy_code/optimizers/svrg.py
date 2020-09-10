@@ -3,10 +3,11 @@ from dependencies import *
 from utils import *
 from datasets import *
 from objectives import *
+import time
 
 
 def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=100, 
-         r=0, x0=None, verbose=True, adaptive_termination = 0):
+         r=0, x0=None, verbose=True, adaptive_termination = 0,  D_test=None, labels_test=None):
     """
         SVRG with fixed step size for solving finite-sum problems
         Closure: a PyTorch-style closure returning the objective value and it's gradient.
@@ -57,6 +58,7 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
             # exceeds the number of standard SVRG gradient evaluations (only for batch-size = 1)
             print('End of budget for gradient evaluations')
             break
+        t_start = time.time()
 
         if adaptive_termination == 2:
             save_dist = np.zeros((num_checkpoints)) 
@@ -79,15 +81,27 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
             print(output)
 
 
-        if np.linalg.norm(full_grad) <= 1e-10:
+        if np.linalg.norm(full_grad) <= 1e-12:
             break
+
 
         num_grad_evals = num_grad_evals + n
 
         score_dict = {"epoch": k}
         score_dict["n_grad_evals"] = num_grad_evals
-        score_dict["loss"] = loss
+        score_dict["train_loss"] = loss
         score_dict["grad_norm"] = np.linalg.norm(full_grad)
+        score_dict["train_accuracy"] = accuracy(x, D, labels)
+        score_dict["train_loss_log"] = np.log(loss)
+        score_dict["grad_norm_log"] = np.log(score_dict["grad_norm"])
+        score_dict["train_accuracy_log"] = np.log(score_dict["train_accuracy"])
+        if D_test is not None:
+            test_loss = closure(x, D_test, labels_test, backwards=False)
+            score_dict["test_loss"] = test_loss
+            score_dict["test_accuracy"] = accuracy(x, D_test, labels_test)
+            score_dict["test_loss_log"] = np.log(test_loss)
+            score_dict["test_accuracy_log"] = np.log(score_dict["test_accuracy"])
+
 
         score_list += [score_dict]
             
@@ -134,5 +148,7 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
                         break
 
             x -= step_size * gk
-    
+        t_end = time.time()
+        time_epoch = t_end - t_start
+        score_list[len(score_list) - 1]["time"] = time_epoch    
     return score_list

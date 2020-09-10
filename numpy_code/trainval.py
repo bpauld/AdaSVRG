@@ -89,12 +89,13 @@ def trainval(exp_dict, savedir_base, reset=False):
 		n = X.shape[0]
 	    
 	#define the regularized losses we will use
+	regularization_factor = exp_dict["regularization_factor"]
 	if exp_dict["loss_func"] == "logistic_loss":
-		closure = make_closure(logistic_loss, 1./n)
+		closure = make_closure(logistic_loss, regularization_factor)
 	elif closure["loss_func"] == "squared_hinge_loss":
-		squared_hinge_closure_l2 = make_closure(squared_hinge_loss, 1./n)
+		closure = make_closure(squared_hinge_loss, regularization_factor)
 	elif exp_dict["loss_func"] == "squared_loss":
-		closure = make_closure(squared_loss, 1./n)
+		closure = make_closure(squared_loss, regularization_factor)
 	else:
 		print("Not a valid loss")
 
@@ -116,7 +117,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 	if opt_dict["name"] in ['svrg']:
 
 
-	    init_step_size = opt_dict["init_step_size"]
+	    init_step_size = exp_dict["init_step_size"]
 	    r = opt_dict["r"]
 	    adaptive_termination = opt_dict["adaptive_termination"]
 
@@ -128,7 +129,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 
 	elif opt_dict["name"] in ['svrg_bb']:		
 
-		init_step_size = opt_dict["init_step_size"]
+		init_step_size = exp_dict["init_step_size"]
 		r = opt_dict["r"]
 		adaptive_termination = opt_dict["adaptive_termination"]
 		score_list = svrg_bb(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
@@ -137,7 +138,7 @@ def trainval(exp_dict, savedir_base, reset=False):
                            init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination)
 
 	elif opt_dict["name"] == 'svrg_ada':
-		init_step_size = opt_dict["init_step_size"]
+		init_step_size = exp_dict["init_step_size"]
 		r = opt_dict["r"]
 		adaptive_termination = opt_dict["adaptive_termination"]
 		linesearch_option = opt_dict["linesearch_option"]

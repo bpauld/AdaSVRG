@@ -2,6 +2,7 @@ from dependencies import *
 from utils import *
 from datasets import *
 from objectives import *
+import time
 
 def armijo_ls(closure, D, labels, x, loss, grad, init_step_size, c, beta):
 
@@ -23,7 +24,8 @@ def armijo_ls(closure, D, labels, x, loss, grad, init_step_size, c, beta):
 
 def svrg_ada(score_list, closure, batch_size, D, labels, 
             init_step_size, max_epoch=100, r=0, x0=None, verbose=True,
-            linesearch_option = 0, max_sgd_warmup_epochs= 0,  adaptive_termination = False):
+            linesearch_option = 0, max_sgd_warmup_epochs= 0,  adaptive_termination = False,
+            D_test=None, labels_test=None):
     """
         SVRG with fixed step size for solving finite-sum problems
         Closure: a PyTorch-style closure returning the objective value and it's gradient.
@@ -60,16 +62,25 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
 
     # SGD (Adagrad) passes
     for k in range(2 * max_sgd_warmup_epochs):
+        t_start = time.time()
 
         if k % 2 == 0:
             loss, full_grad = closure(x, D, labels)
         
             score_dict = {"epoch": k}
             score_dict["n_grad_evals"] = num_grad_evals
-            score_dict["loss"] = loss
+            score_dict["train_loss"] = loss
             score_dict["grad_norm"] = np.linalg.norm(full_grad)
-
-            score_list += [score_dict]
+            score_dict["train_accuracy"] = accuracy(x, D, labels)
+            score_dict["train_loss_log"] = np.log(loss)
+            score_dict["grad_norm_log"] = np.log(score_dict["grad_norm"])
+            score_dict["train_accuracy_log"] = np.log(score_dict["train_accuracy"])
+            if D_test is not None:
+                test_loss = closure(x, D_test, labels_test, backwards=False)
+                score_dict["test_loss"] = test_loss
+                score_dict["test_accuracy"] = accuracy(x, D_test, labels_test)
+                score_dict["test_loss_log"] = np.log(test_loss)
+                score_dict["test_accuracy_log"] = np.log(score_dict["test_accuracy"])
 
             if verbose:
                 output = 'Epoch.: %d, Grad. norm: %.2e' % \
@@ -106,8 +117,12 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
             # print(np.abs(term1 - term2))
 
             x -= (step_size / np.sqrt(Gk2)) * x_grad
+        t_end = time.time()
+        time_epoch = t_end - t_start
+        score_list[len(score_list) - 1]["time"] = time_epoch
 
     for k in range(max_epoch - max_sgd_warmup_epochs):
+        t_start = time.time()
 
         loss, full_grad = closure(x, D, labels)
         x_tilde = x.copy()
@@ -142,11 +157,25 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
             output += ', Num gradient evaluations: %d' % num_grad_evals
             print(output)
 
+        if np.linalg.norm(full_grad) <= 1e-12:
+            return score_list
+
         num_grad_evals = num_grad_evals + n
+        
         score_dict = {"epoch": k}
         score_dict["n_grad_evals"] = num_grad_evals
-        score_dict["loss"] = loss
+        score_dict["train_loss"] = loss
         score_dict["grad_norm"] = np.linalg.norm(full_grad)
+        score_dict["train_accuracy"] = accuracy(x, D, labels)
+        score_dict["train_loss_log"] = np.log(loss)
+        score_dict["grad_norm_log"] = np.log(score_dict["grad_norm"])
+        score_dict["train_accuracy_log"] = np.log(score_dict["train_accuracy"])
+        if D_test is not None:
+            test_loss = closure(x, D_test, labels_test, backwards=False)
+            score_dict["test_loss"] = test_loss
+            score_dict["test_accuracy"] = accuracy(x, D_test, labels_test)
+            score_dict["test_loss_log"] = np.log(test_loss)
+            score_dict["test_accuracy_log"] = np.log(score_dict["test_accuracy"])
 
         score_list += [score_dict]
 
@@ -179,5 +208,8 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
                         break
 
             x -= (step_size / np.sqrt(Gk2)) * gk
+        t_end = time.time()
+        time_epoch = t_end - t_start
+        score_list[len(score_list) - 1]["time"] = time_epoch
 
     return score_list

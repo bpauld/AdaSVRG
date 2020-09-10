@@ -56,3 +56,10 @@ def squared_loss(w, X, y):
     n,d = X.shape
     '''Squared Loss'''
     return torch.mean(( y - torch.matmul(X, w) )**2)
+
+def accuracy(w, X, y):
+    pred = np.matmul(X,w)
+    y_pred = np.divide(pred, np.abs(pred))
+    acc = (y_pred == y).mean()
+    
+    return acc

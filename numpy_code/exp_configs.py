@@ -3,22 +3,13 @@ import itertools
 
 EXP_GROUPS = {}
 
+
+step_sizes = [1e-6, 1e-5]
 opt_list = [
 
-            {'name':'svrg',             
-            'init_step_size':1e-1,
+            {'name':'svrg',
             "r":0.,
-            "adaptive_termination": 0},
-
-            {'name':'svrg',             
-            'init_step_size':1e-1,
-            "r":2.,
-            "adaptive_termination": 2},
-
-			{'name':'svrg',             
-            'init_step_size':1e-1,
-            "r":2.,
-            "adaptive_termination": 1},
+            "adaptive_termination": 0}
 
             # {'name':'svrg_bb',  
             # 'init_step_size':1e-3,
@@ -37,6 +28,8 @@ opt_list = [
 EXP_GROUPS['exp1'] = hu.cartesian_exp_group({"dataset":["synthetic"],
                                             "loss_func": ["logistic_loss"],
                                             "opt": opt_list,
+                                            "regularization_factor":1e-4,
+                                            "init_step_size": step_sizes,
                                             'margin':[1e-6],
                                             "false_ratio" : [0.25],
                                             "n_samples": [1000],
