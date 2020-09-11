@@ -110,3 +110,56 @@ EXP_GROUPS['exp5'] = hu.cartesian_exp_group({"dataset":["a1a"],
                                             "batch_size":[1],
                                             "max_epoch":[100],
                                             "runs":[0,1,2,3,4]})
+
+
+# ---------  Edited by Sharan ---------------- #
+runs = [0]
+losses = ["logistic_loss"] #, "squared_loss", "squared_hinge_loss"]
+stepsizes = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1]
+
+svrg_list = []
+for eta in stepsizes:
+    svrg_list += {'name':'svrg',
+                "r":0.,
+                "adaptive_termination": 0,
+                "init_step_size" : eta},
+
+svrg_bb_list = []
+for eta in stepsizes:
+    svrg_bb_list += {'name':'svrg_bb',
+                    "r":0.,
+                    "init_step_size" : eta,
+                    "adaptive_termination": 0},
+
+svrg_ada_list = []
+for reset in [True, False]:
+    for eta in [100]:
+        svrg_ada_list += {'name':'svrg_ada',
+                        "r":0.,
+                        "init_step_size" : eta,                
+                        "adaptive_termination": 0,
+                        "linesearch_option": 2,
+                        "reset":  reset},  
+
+
+svrg_cb_list = []
+for reset in [False, True]:    
+    svrg_cb_list += {'name':'svrg_cb',
+                    "r":0.,              
+                    "adaptive_termination": 0,                        
+                    "reset":  reset},                                              
+
+opt_list2 =  svrg_cb_list  #+svrg_list +  svrg_bb_list  + svrg_ada_list + 
+            
+
+EXP_GROUPS['sharan_test'] = hu.cartesian_exp_group({"dataset":["synthetic"],
+                                            "loss_func": losses,
+                                            "opt": opt_list2,
+                                            "regularization_factor":1e-4,                                            
+                                            'margin':[1e-6],
+                                            "false_ratio" : [0.25],
+                                            "n_samples": [10000],
+                                            "d": [20],
+                                            "batch_size":[1],
+                                            "max_epoch":[100],
+                                            "runs":runs})

@@ -4,28 +4,9 @@ from datasets import *
 from objectives import *
 import time
 
-def armijo_ls(closure, D, labels, x, loss, grad, p, init_step_size, c, beta):
-
-    temp_step_size = init_step_size
-    armijo_iter = 1
-    while closure(x - temp_step_size * grad, D, labels,
-                  backwards=False) > loss - c * temp_step_size * np.dot(grad, p) :
-
-        temp_step_size *= beta
-        armijo_iter += 1
-        if armijo_iter == 50:
-            temp_step_size = 1e-6
-            break
-
-    step_size = temp_step_size
-
-    return step_size, armijo_iter
-
-
-def svrg_ada(score_list, closure, batch_size, D, labels, 
-            init_step_size, max_epoch=100, r=0, x0=None, verbose=True,
-            linesearch_option = 0, adaptive_termination = False,
-            D_test=None, labels_test=None, reset = True):
+def svrg_cb(score_list, closure, batch_size, D, labels, 
+            max_epoch=100, r=0, x0=None, verbose=True,             
+            D_test=None, labels_test=None, alpha = 100, reset = True, adaptive_termination = 0):
     """
         SVRG with fixed step size for solving finite-sum problems
         Closure: a PyTorch-style closure returning the objective value and it's gradient.
@@ -38,7 +19,7 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
     n = D.shape[0]
     d = D.shape[1]
     if r <= 0:
-        m = n
+        m = int(n)
         if verbose:
             print('Info: set m=n by default')
     else:
@@ -54,41 +35,35 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
 
     num_grad_evals = 0
 
-    term1 = 0
-    term2 = 0
-    t = 0
+    if adaptive_termination == 2:
+        # hardcoding these parameters for now. 
+        q = 1.5
+        k0 = 5                
+        num_checkpoints = 20 # number of times to check
+        threshold  = 0.6
 
-    step_size = init_step_size    
+        start = int(q**(k0))
+            
+        check_iter_indices = list(map(int,  list(np.linspace(start, m, num_checkpoints))))
+        save_iter_indices = list(map(int, np.linspace(start, m, num_checkpoints) / q))
+        print(check_iter_indices, save_iter_indices)
 
     for k in range(max_epoch):
+
+        if num_grad_evals >= (n + n / batch_size) * max_epoch:
+            # exceeds the number of standard SVRG gradient evaluations (only for batch-size = 1)
+            print('End of budget for gradient evaluations')
+            break
+
         t_start = time.time()
+
+        if adaptive_termination == 2:
+            save_dist = np.zeros((num_checkpoints)) 
+            checkpoint_num = 0
 
         loss, full_grad = closure(x, D, labels)
         x_tilde = x.copy()
-
-        # initialize running sum of gradient norms
-        if (k == 0) or (reset):
-            Gk2 = 0
-
-        term1 = 0
-        term2 = 0
-
-        if linesearch_option == 0:
-            step_size = init_step_size
-
-        elif linesearch_option == 1 and k > 0:
-            # c = 1e-4
-            # beta = 0.9
-            # reset_step_size = init_step_size
-            # step_size, armijo_iter = armijo_ls(closure, D, labels, x, loss, full_grad, reset_step_size, c, beta)
-            # num_grad_evals = num_grad_evals + n * armijo_iter
-            s = x_tilde - last_x_tilde
-            y = full_grad - last_full_grad
-            step_size = np.linalg.norm(s) ** 2 / np.dot(s, y) / m
-
-        elif linesearch_option == 2 and (k ==  0):
-            step_size = init_step_size
-
+    
         last_full_grad = full_grad
         last_x_tilde = x_tilde
 
@@ -96,9 +71,8 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
             output = 'Epoch.: %d, Grad. norm: %.2e' % \
                      (k, np.linalg.norm(full_grad))
             output += ', Func. value: %e' % loss
-            output += ', Step size: %e' % step_size
             output += ', Num gradient evaluations: %d' % num_grad_evals
-            print(output)        
+            print(output)
 
         if np.linalg.norm(full_grad) <= 1e-12:
             return score_list
@@ -122,6 +96,13 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
 
         score_list += [score_dict]
 
+        if (k == 0)  or (reset):
+            L_max = np.zeros(d)
+            gk_norm_max = np.zeros(d)
+            reward = np.zeros(d)
+            theta = np.zeros(d)
+            x0 = np.copy(x)                    
+
         # Create Minibatches:
         minibatches = make_minibatches(n, m, batch_size)
         for i in range(m):
@@ -133,25 +114,39 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
             # compute the gradients:
             loss_temp, x_grad = closure(x, Di, labels_i)
             x_tilde_grad = closure(x_tilde, Di, labels_i)[1]
-            gk = x_grad - x_tilde_grad + full_grad
-            Gk2 = Gk2 + (np.linalg.norm(gk) ** 2)
+            gk = -1. * (x_grad - x_tilde_grad + full_grad)
+        
+            L_max = np.maximum(L_max,np.absolute(gk))
+            gk_norm_max = gk_norm_max + np.absolute(gk)        
 
-            if linesearch_option == 2:
-                reset_step_size = step_size 
-                c = 0.5
-                beta = 0.9
-                step_size, armijo_iter = armijo_ls(closure, Di, labels_i, x, loss_temp, x_grad, gk, reset_step_size, c, beta)
-                num_grad_evals = num_grad_evals + batch_size * armijo_iter
-                # print(step_size)
+            reward = np.maximum(np.zeros(d), reward + np.multiply((x - x0),gk) )
+            theta = theta + gk
+            
+            denom = np.multiply(L_max, np.maximum(np.multiply(alpha, L_max), gk_norm_max + L_max))            
+            grad_cb = np.divide(theta, denom)
+            grad_cb = np.multiply(grad_cb, L_max + reward )
 
-            if adaptive_termination == True:
-                if (i+1) == int(n/2.):
-                    term1, term2 = compute_pflug_statistic(term1, term2, (i+1), x, gk, step_size)
-                    if (np.abs(term1 - term2)) < 1e-8:
-                        print('Test passed. Breaking out of inner loop')
+            x = x0 + grad_cb            
+                        
+            if adaptive_termination == 2:
+
+                if (i+1) in (save_iter_indices):                    
+                    save_dist[checkpoint_num] = np.linalg.norm(x - x_tilde)
+                    checkpoint_num += 1
+            
+                elif ((i+1) in check_iter_indices):
+               
+                    t1 = i+1
+                                
+                    ind = check_iter_indices.index(i+1)                    
+                    x_prev_dist = save_dist[ind]
+                    x_dist = np.linalg.norm(x - x_tilde)
+                    t2 = save_iter_indices[ind]
+                    S = (np.log(x_dist**2) - np.log(x_prev_dist**2)) / (np.log(t1) - np.log(t2))
+                    print('S = ', S)
+                    if S < threshold:                        
+                        print('Test passed. Breaking out of inner loop at iteration ', (i+1))
                         break
-
-            x -= (step_size / np.sqrt(Gk2)) * gk
 
         t_end = time.time()
         time_epoch = t_end - t_start

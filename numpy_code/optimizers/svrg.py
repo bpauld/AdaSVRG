@@ -77,8 +77,9 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
             output = 'Epoch.: %d, Grad. norm: %.2e' % \
                      (k, np.linalg.norm(full_grad))
             output += ', Func. value: %e' % loss
+            output += ', Step size: %e' % step_size
             output += ', Num gradient evaluations: %d' % num_grad_evals
-            print(output)
+            print(output) 
 
 
         if np.linalg.norm(full_grad) <= 1e-12:
@@ -94,13 +95,13 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
         score_dict["train_accuracy"] = accuracy(x, D, labels)
         score_dict["train_loss_log"] = np.log(loss)
         score_dict["grad_norm_log"] = np.log(score_dict["grad_norm"])
-        score_dict["train_accuracy_log"] = np.log(score_dict["train_accuracy"])
+        # score_dict["train_accuracy_log"] = np.log(score_dict["train_accuracy"])
         if D_test is not None:
             test_loss = closure(x, D_test, labels_test, backwards=False)
             score_dict["test_loss"] = test_loss
             score_dict["test_accuracy"] = accuracy(x, D_test, labels_test)
             score_dict["test_loss_log"] = np.log(test_loss)
-            score_dict["test_accuracy_log"] = np.log(score_dict["test_accuracy"])
+            # score_dict["test_accuracy_log"] = np.log(score_dict["test_accuracy"])
 
 
         score_list += [score_dict]

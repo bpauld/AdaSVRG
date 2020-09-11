@@ -59,7 +59,7 @@ def squared_loss(w, X, y):
 
 def accuracy(w, X, y):
     pred = np.matmul(X,w)
-    y_pred = np.divide(pred, np.abs(pred))
+    y_pred = np.divide(pred, np.abs(pred), out=np.zeros_like(pred), where=np.abs(pred)!=0)
     acc = (y_pred == y).mean()
     
     return acc

@@ -7,6 +7,7 @@ from utils import *
 from optimizers.svrg import *
 from optimizers.svrg_bb import *
 from optimizers.svrg_ada import *
+from optimizers.svrg_cb import *
 
 import argparse
 import exp_configs
@@ -116,8 +117,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 
 	if opt_dict["name"] in ['svrg']:
 
-
-	    init_step_size = exp_dict["init_step_size"]
+	    init_step_size = opt_dict["init_step_size"]
 	    r = opt_dict["r"]
 	    adaptive_termination = opt_dict["adaptive_termination"]
 
@@ -129,7 +129,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 
 	elif opt_dict["name"] in ['svrg_bb']:		
 
-		init_step_size = exp_dict["init_step_size"]
+		init_step_size = opt_dict["init_step_size"]
 		r = opt_dict["r"]
 		adaptive_termination = opt_dict["adaptive_termination"]
 		score_list = svrg_bb(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
@@ -138,16 +138,31 @@ def trainval(exp_dict, savedir_base, reset=False):
                            init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination)
 
 	elif opt_dict["name"] == 'svrg_ada':
-		init_step_size = exp_dict["init_step_size"]
+		init_step_size = opt_dict["init_step_size"]
 		r = opt_dict["r"]
 		adaptive_termination = opt_dict["adaptive_termination"]
 		linesearch_option = opt_dict["linesearch_option"]
-		max_sgd_warmup_epochs= opt_dict["max_sgd_warmup_epochs"]
+		reset = opt_dict["reset"]
 
 		score_list = svrg_ada(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               
-                           D=X, labels=y,
-                           init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination)
+                           D=X, labels=y, 
+                           r = r, init_step_size=init_step_size, 
+                           linesearch_option = linesearch_option,
+                           adaptive_termination= adaptive_termination,
+                           reset = reset)
+
+	elif opt_dict["name"] == 'svrg_cb':
+		r = opt_dict["r"]
+		adaptive_termination = opt_dict["adaptive_termination"]
+		reset = opt_dict["reset"]
+
+		score_list = svrg_cb(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
+						   max_epoch=exp_dict["max_epoch"],                                               
+                           D=X, labels=y, 
+                           r = r,                            
+                           adaptive_termination= adaptive_termination,
+                           reset = reset)		
 
 	else:
 		print('Method does not exist')
