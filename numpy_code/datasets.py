@@ -27,7 +27,7 @@ def load_libsvm(name, data_dir):
 
 
 def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0, is_subsample=0, is_kernelize=0,
-              test_prop=0.2, split_seed=9513451):
+              test_prop=0.2, split_seed=9513451, standardize = False):
     
     if (dataset_name != 'synthetic'):
 
@@ -42,9 +42,10 @@ def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0, is_s
             y = data[1].toarray().ravel()
         else:
             y = data[1]
-
-    else:
-
+            
+    if dataset_name == "mushrooms":
+        y[y==2] = -1
+    if dataset_name=="synthetic":
         A, y, w_true = create_dataset(n, d, margin, false_ratio)
 
     # subsample
@@ -54,6 +55,11 @@ def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0, is_s
 
     # split dataset into train and test sets
     X_train, X_test, y_train, y_test = train_test_split(A, y, test_size=test_prop, random_state=split_seed)
+    
+    #For now no need to standardize
+    #if standardize:
+     #   X_train = (X_train - np.mean(X_train, axis = 0))/ np.std(X_train, axis = 0)
+      #  X_test = (X_test - np.mean(X_train, axis = 0))/ np.std(X_train, axis = 0)
 
     if is_kernelize == 1:
         # Form kernel
