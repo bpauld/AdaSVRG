@@ -124,7 +124,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 	    score_list = svrg(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               
                            D=X, labels=y,
-                           init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination)
+                           init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination, D_test=X_test, labels_test=y_test)
 
 
 	elif opt_dict["name"] in ['svrg_bb']:		
@@ -135,7 +135,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 		score_list = svrg_bb(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               
                            D=X, labels=y,
-                           init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination)
+                           init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination, D_test=X_test, labels_test=y_test)
 
 	elif opt_dict["name"] == 'svrg_ada':
 		init_step_size = opt_dict["init_step_size"]
@@ -150,7 +150,7 @@ def trainval(exp_dict, savedir_base, reset=False):
                            r = r, init_step_size=init_step_size, 
                            linesearch_option = linesearch_option,
                            adaptive_termination= adaptive_termination,
-                           reset = reset)
+                           reset = reset, D_test=X_test, labels_test=y_test)
 
 	elif opt_dict["name"] == 'svrg_cb':
 		r = opt_dict["r"]
@@ -162,7 +162,7 @@ def trainval(exp_dict, savedir_base, reset=False):
                            D=X, labels=y, 
                            r = r,                            
                            adaptive_termination= adaptive_termination,
-                           reset = reset)		
+                           reset = reset, D_test = X_test, labels_test=y_test)		
 
 	else:
 		print('Method does not exist')
