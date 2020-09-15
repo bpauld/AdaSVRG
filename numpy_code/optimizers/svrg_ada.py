@@ -83,8 +83,7 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
             num_grad_evals = num_grad_evals + n * armijo_iter
       
             # incorporate the correction for Adagrad
-            step_size = np.linalg.norm(full_grad) * reciprocal_L_hat            
-            print(step_size)
+            step_size = np.linalg.norm(full_grad) * reciprocal_L_hat                        
             
         elif linesearch_option == 2 and (k ==  0):
             step_size = init_step_size
