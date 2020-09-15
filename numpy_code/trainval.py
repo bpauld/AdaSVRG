@@ -8,6 +8,7 @@ from optimizers.svrg import *
 from optimizers.svrg_bb import *
 from optimizers.svrg_ada import *
 from optimizers.svrg_cb import *
+from optimizers.sarah import *
 
 import argparse
 import exp_configs
@@ -28,10 +29,10 @@ from haven import haven_utils as hu
 from haven import haven_chk as hc
 from haven import haven_jobs as hj
 
-# dataset options
-data_dir = './'
-
 def trainval(exp_dict, savedir_base, reset=False):
+
+	# dataset options
+	data_dir = './'
 
 	# get experiment directory
 	exp_id = hu.hash_dict(exp_dict)
@@ -51,7 +52,6 @@ def trainval(exp_dict, savedir_base, reset=False):
 
 	seed = 42 + exp_dict['runs']
 	np.random.seed(seed)
-
 
 	# default values	
 	if "is_subsample" not in exp_dict.keys():
@@ -116,7 +116,6 @@ def trainval(exp_dict, savedir_base, reset=False):
 	opt_dict = exp_dict["opt"]
 
 	if opt_dict["name"] in ['svrg']:
-
 	    init_step_size = opt_dict["init_step_size"]
 	    r = opt_dict["r"]
 	    adaptive_termination = opt_dict["adaptive_termination"]
@@ -139,8 +138,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 
 	elif opt_dict["name"] == 'svrg_ada':
 		init_step_size = opt_dict["init_step_size"]
-		r = opt_dict["r"]
-		adaptive_termination = opt_dict["adaptive_termination"]
+		r = opt_dict["r"]		
 		linesearch_option = opt_dict["linesearch_option"]
 		reset = opt_dict["reset"]
 
@@ -148,8 +146,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 						   max_epoch=exp_dict["max_epoch"],                                               
                            D=X, labels=y, 
                            r = r, init_step_size=init_step_size, 
-                           linesearch_option = linesearch_option,
-                           adaptive_termination= adaptive_termination,
+                           linesearch_option = linesearch_option,                         
                            reset = reset, D_test=X_test, labels_test=y_test)
 
 	elif opt_dict["name"] == 'svrg_cb':
@@ -163,6 +160,16 @@ def trainval(exp_dict, savedir_base, reset=False):
                            r = r,                            
                            adaptive_termination= adaptive_termination,
                            reset = reset, D_test = X_test, labels_test=y_test)		
+
+
+	elif opt_dict["name"] == 'sarah':
+		r = opt_dict["r"]
+		init_step_size = opt_dict["init_step_size"]
+		score_list = sarah(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
+						   max_epoch=exp_dict["max_epoch"],                                               
+                           D=X, labels=y, 
+                           r = r,   init_step_size = init_step_size,                          
+                           D_test = X_test, labels_test=y_test)	
 
 	else:
 		print('Method does not exist')

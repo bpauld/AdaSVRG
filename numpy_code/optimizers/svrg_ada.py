@@ -23,8 +23,8 @@ def armijo_ls(closure, D, labels, x, loss, grad, p, init_step_size, c, beta):
 
 
 def svrg_ada(score_list, closure, batch_size, D, labels, 
-            init_step_size, max_epoch=100, r=0, x0=None, verbose=True,
-            linesearch_option = 0, adaptive_termination = False,
+            init_step_size = 1, max_epoch=100, r=0, x0=None, verbose=True,
+            linesearch_option = 1, 
             D_test=None, labels_test=None, reset = True):
     """
         SVRG with fixed step size for solving finite-sum problems
@@ -54,10 +54,6 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
 
     num_grad_evals = 0
 
-    term1 = 0
-    term2 = 0
-    t = 0
-
     step_size = init_step_size    
 
     for k in range(max_epoch):
@@ -69,23 +65,27 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
         # initialize running sum of gradient norms
         if (k == 0) or (reset):
             Gk2 = 0
-
-        term1 = 0
-        term2 = 0
-
+           
         if linesearch_option == 0:
             step_size = init_step_size
 
-        elif linesearch_option == 1 and k > 0:
-            # c = 1e-4
-            # beta = 0.9
-            # reset_step_size = init_step_size
-            # step_size, armijo_iter = armijo_ls(closure, D, labels, x, loss, full_grad, reset_step_size, c, beta)
-            # num_grad_evals = num_grad_evals + n * armijo_iter
-            s = x_tilde - last_x_tilde
-            y = full_grad - last_full_grad
-            step_size = np.linalg.norm(s) ** 2 / np.dot(s, y) / m
+        elif linesearch_option == 1:
 
+            if k == 0:      
+                # do a line-search in the first epoch
+                reset_step_size = 1
+            else:
+                reset_step_size = reciprocal_L_hat * 2
+
+            c = 1e-4
+            beta = 0.9            
+            reciprocal_L_hat, armijo_iter = armijo_ls(closure, D, labels, x, loss, full_grad, full_grad, reset_step_size, c, beta)
+            num_grad_evals = num_grad_evals + n * armijo_iter
+      
+            # incorporate the correction for Adagrad
+            step_size = np.linalg.norm(full_grad) * reciprocal_L_hat            
+            print(step_size)
+            
         elif linesearch_option == 2 and (k ==  0):
             step_size = init_step_size
 
@@ -111,17 +111,15 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
         score_dict["grad_norm"] = np.linalg.norm(full_grad)
         score_dict["train_accuracy"] = accuracy(x, D, labels)
         score_dict["train_loss_log"] = np.log(loss)
-        score_dict["grad_norm_log"] = np.log(score_dict["grad_norm"])
-        # score_dict["train_accuracy_log"] = np.log(score_dict["train_accuracy"])
+        score_dict["grad_norm_log"] = np.log(score_dict["grad_norm"])        
         if D_test is not None:
             test_loss = closure(x, D_test, labels_test, backwards=False)
             score_dict["test_loss"] = test_loss
             score_dict["test_accuracy"] = accuracy(x, D_test, labels_test)
-            score_dict["test_loss_log"] = np.log(test_loss)
-            # score_dict["test_accuracy_log"] = np.log(score_dict["test_accuracy"])
+            score_dict["test_loss_log"] = np.log(test_loss)            
 
         score_list += [score_dict]
-
+        
         # Create Minibatches:
         minibatches = make_minibatches(n, m, batch_size)
         for i in range(m):
@@ -142,17 +140,9 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
                 beta = 0.9
                 step_size, armijo_iter = armijo_ls(closure, Di, labels_i, x, loss_temp, x_grad, gk, reset_step_size, c, beta)
                 num_grad_evals = num_grad_evals + batch_size * armijo_iter
-                # print(step_size)
-
-            if adaptive_termination == True:
-                if (i+1) == int(n/2.):
-                    term1, term2 = compute_pflug_statistic(term1, term2, (i+1), x, gk, step_size)
-                    if (np.abs(term1 - term2)) < 1e-8:
-                        print('Test passed. Breaking out of inner loop')
-                        break
-
+            
             x -= (step_size / np.sqrt(Gk2)) * gk
-
+            
         t_end = time.time()
         time_epoch = t_end - t_start
         score_list[len(score_list) - 1]["time"] = time_epoch

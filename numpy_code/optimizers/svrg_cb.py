@@ -101,7 +101,10 @@ def svrg_cb(score_list, closure, batch_size, D, labels,
             gk_norm_max = np.zeros(d)
             reward = np.zeros(d)
             theta = np.zeros(d)
-            x0 = np.copy(x)                    
+            x0 = np.copy(x)     
+            # alpha  = np.absolute(full_grad        )
+            # alpha = 1. / np.linalg.norm(full_grad)       
+            # print(alpha)
 
         # Create Minibatches:
         minibatches = make_minibatches(n, m, batch_size)
@@ -126,7 +129,7 @@ def svrg_cb(score_list, closure, batch_size, D, labels,
             grad_cb = np.divide(theta, denom)
             grad_cb = np.multiply(grad_cb, L_max + reward )
 
-            x = x0 + grad_cb            
+            x = x0 + grad_cb 
                         
             if adaptive_termination == 2:
 
