@@ -12,10 +12,10 @@ def armijo_ls(closure, D, labels, x, loss, grad, p, init_step_size, c, beta):
                   backwards=False) > loss - c * temp_step_size * np.dot(grad, p) :
 
         temp_step_size *= beta
-        armijo_iter += 1
         if armijo_iter == 50:
             temp_step_size = 1e-6
             break
+        armijo_iter += 1
 
     step_size = temp_step_size
 
