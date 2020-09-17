@@ -73,7 +73,7 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
 
             if k == 0:      
                 # do a line-search in the first epoch
-                reset_step_size = 1
+                reset_step_size = init_step_size
             else:
                 reset_step_size = reciprocal_L_hat * 2
 
@@ -87,6 +87,18 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
             
         elif linesearch_option == 2 and (k ==  0):
             step_size = init_step_size
+            
+        elif linesearch_option == 3:
+            if k == 0:
+                reset_step_size = init_step_size
+                c = 1e-4
+                beta = 0.9            
+                reciprocal_L_hat, armijo_iter = armijo_ls(closure, D, labels, x, loss, full_grad, full_grad, reset_step_size, c, beta)
+                num_grad_evals = num_grad_evals + n * armijo_iter
+                step_size = np.linalg.norm(full_grad) * reciprocal_L_hat
+            else:
+                L_hat = np.linalg.norm(full_grad - last_full_grad) / np.linalg.norm(x_tilde - last_x_tilde)
+                step_size = np.linalg.norm(full_grad) / L_hat
 
         last_full_grad = full_grad
         last_x_tilde = x_tilde
