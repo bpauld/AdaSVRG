@@ -4,7 +4,7 @@ import itertools
 EXP_GROUPS = {}
 
 # ------------ for debugging ----------------------- #
-step_sizes = [1e-5]
+stepsizes = [1e-5]
 opt_list = [{'name':'svrg',
             "r":0.,
             "adaptive_termination": 0,
@@ -33,49 +33,49 @@ runs = [0,1,2,3,4]
 # optimizers
 svrg_list = []
 for eta in stepsizes:
-    svrg_list += {'name':'svrg',
+    svrg_list += [{'name':'svrg',
                 "r":0.,
                 "adaptive_termination": 0,
-                "init_step_size" : eta},
+                "init_step_size" : eta}]
 
 svrg_bb_list = []
-for eta in step_sizes:
-    svrg_bb_list += {'name':'svrg_bb',
+for eta in stepsizes:
+    svrg_bb_list += [{'name':'svrg_bb',
                     "r":0.,
                     "init_step_size" : eta,
-                    "adaptive_termination": 0},
+                    "adaptive_termination": 0}]
 
 svrg_ada_list = []
 for ls in [1]:
     for reset in [True]:
         for eta in [1]:
-            svrg_ada_list += {'name':'svrg_ada',
+            svrg_ada_list += [{'name':'svrg_ada',
                             "r":0,
                             "init_step_size" : eta,                            
                             "linesearch_option": ls,
-                            "reset":  reset},  
+                            "reset":  reset}]
 
 
 svrg_cb_list = []
 for reset in [True]:    
-    svrg_cb_list += {'name':'svrg_cb',
+    svrg_cb_list += [{'name':'svrg_cb',
                     "r":0.,              
                     "adaptive_termination": 0,                        
-                    "reset":  reset},                                              
+                    "reset":  reset}]
 
 sarah_list = []
 for eta in stepsizes:
-    sarah_list += {'name':'sarah',
+    sarah_list += [{'name':'sarah',
                 "r":0.,                
-                "init_step_size" : eta},
+                "init_step_size" : eta}]
 
 # final list of optimizers
-opt_list2 = svrg_bb_list + svrg_ada_list + svrg_list + sarah_list
+opt_list2 = svrg_bb_list + svrg_list + sarah_list + svrg_ada_list
+print(opt_list2)
 
 # for debugging
-# opt_list2 = svrg_bb_list
+# opt_list2 = svrg_bb_list + svrg_ada_list
 # opt_list2 = svrg_ada_list 
-# opt_list2 = sarah_list 
 
 #Setup for experiment 2, with synthetic dataset 
 EXP_GROUPS['exp2'] = hu.cartesian_exp_group({"dataset":["synthetic"],
@@ -105,9 +105,8 @@ EXP_GROUPS['exp4'] = hu.cartesian_exp_group({"dataset":["ijcnn"],
                                             "opt": opt_list2,
                                             "regularization_factor":1./35000,
                                             "batch_size":[1],
-                                            "max_epoch":[100],
+                                            "max_epoch":[50],
                                             "runs":runs})
-
 
 #Setup for experiment 5, with dataset "a1a"
 EXP_GROUPS['exp5'] = hu.cartesian_exp_group({"dataset":["a1a"],
@@ -115,7 +114,7 @@ EXP_GROUPS['exp5'] = hu.cartesian_exp_group({"dataset":["a1a"],
                                             "opt": opt_list2,
                                             "regularization_factor":1/1600,
                                             "batch_size":[1],
-                                            "max_epoch":[100],
+                                            "max_epoch":[50],
                                             "runs":runs})
 
 #Setup for experiment 6, with dataset "a2a"
@@ -124,7 +123,7 @@ EXP_GROUPS['exp6'] = hu.cartesian_exp_group({"dataset":["a2a"],
                                             "opt": opt_list2,
                                             "regularization_factor":1/1600,
                                             "batch_size":[1],
-                                            "max_epoch":[100],
+                                            "max_epoch":[50],
                                             "runs":runs})                                                 
 
 #Setup for experiment 7, with dataset "w8a"
@@ -133,7 +132,7 @@ EXP_GROUPS['exp7'] = hu.cartesian_exp_group({"dataset":["w8a"],
                                             "opt": opt_list2,
                                             "regularization_factor":1/1600,
                                             "batch_size":[1],
-                                            "max_epoch":[100],
+                                            "max_epoch":[50],
                                             "runs":runs})                                                                                        
 
                                                                                    
@@ -143,5 +142,5 @@ EXP_GROUPS['exp8'] = hu.cartesian_exp_group({"dataset":["rcv1"],
                                             "opt": opt_list2,
                                             "regularization_factor":1/1600,
                                             "batch_size":[1],
-                                            "max_epoch":[100],
+                                            "max_epoch":[50],
                                             "runs":runs})
