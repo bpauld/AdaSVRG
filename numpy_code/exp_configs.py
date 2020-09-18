@@ -48,7 +48,7 @@ for eta in stepsizes:
 svrg_ada_list = []
 for ls in [1, 3, 4]:
     for reset in [True]:
-        for eta in stepsizes:
+        for eta in [1]:
             svrg_ada_list += [{'name':'svrg_ada',
                             "r":0,
                             "init_step_size" : eta,                            
