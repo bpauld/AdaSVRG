@@ -26,7 +26,7 @@ EXP_GROUPS['exp1'] = hu.cartesian_exp_group({"dataset":["synthetic"],
 # ------------ for debugging ----------------------- #                                            
 
 #Setup for comparing svrg, svrg_bb, and svrg_ada 
-losses = ["logistic_loss", "squared_hinge_loss", "squared_loss"   ]
+losses = ["logistic_loss", "squared_hinge_loss", "squared_loss"]
 stepsizes = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1]
 runs = [0,1,2,3,4]
 
@@ -46,9 +46,9 @@ for eta in stepsizes:
                     "adaptive_termination": 0}]
 
 svrg_ada_list = []
-for ls in [1]:
+for ls in [1, 3, 4]:
     for reset in [True]:
-        for eta in [1]:
+        for eta in stepsizes:
             svrg_ada_list += [{'name':'svrg_ada',
                             "r":0,
                             "init_step_size" : eta,                            
@@ -70,7 +70,7 @@ for eta in stepsizes:
                 "init_step_size" : eta}]
 
 # final list of optimizers
-opt_list2 = svrg_bb_list + svrg_list + sarah_list + svrg_ada_list
+opt_list2 = svrg_ada_list
 print(opt_list2)
 
 # for debugging
@@ -105,34 +105,34 @@ EXP_GROUPS['exp4'] = hu.cartesian_exp_group({"dataset":["ijcnn"],
                                             "opt": opt_list2,
                                             "regularization_factor":1./35000,
                                             "batch_size":[1],
-                                            "max_epoch":[50],
+                                            "max_epoch":[100],
                                             "runs":runs})
 
 #Setup for experiment 5, with dataset "a1a"
 EXP_GROUPS['exp5'] = hu.cartesian_exp_group({"dataset":["a1a"],
                                             "loss_func": losses,
                                             "opt": opt_list2,
-                                            "regularization_factor":1/1600,
+                                            "regularization_factor":1./1600,
                                             "batch_size":[1],
-                                            "max_epoch":[50],
+                                            "max_epoch":[100],
                                             "runs":runs})
 
 #Setup for experiment 6, with dataset "a2a"
 EXP_GROUPS['exp6'] = hu.cartesian_exp_group({"dataset":["a2a"],
                                             "loss_func": losses,
                                             "opt": opt_list2,
-                                            "regularization_factor":1/1600,
+                                            "regularization_factor":1./2300,
                                             "batch_size":[1],
-                                            "max_epoch":[50],
+                                            "max_epoch":[100],
                                             "runs":runs})                                                 
 
 #Setup for experiment 7, with dataset "w8a"
 EXP_GROUPS['exp7'] = hu.cartesian_exp_group({"dataset":["w8a"],
                                             "loss_func": losses,
                                             "opt": opt_list2,
-                                            "regularization_factor":1/1600,
+                                            "regularization_factor":1./50000,
                                             "batch_size":[1],
-                                            "max_epoch":[50],
+                                            "max_epoch":[100],
                                             "runs":runs})                                                                                        
 
                                                                                    
@@ -140,7 +140,7 @@ EXP_GROUPS['exp7'] = hu.cartesian_exp_group({"dataset":["w8a"],
 EXP_GROUPS['exp8'] = hu.cartesian_exp_group({"dataset":["rcv1"],
                                             "loss_func": losses,
                                             "opt": opt_list2,
-                                            "regularization_factor":1/1600,
+                                            "regularization_factor":1./20000,
                                             "batch_size":[1],
-                                            "max_epoch":[50],
+                                            "max_epoch":[100],
                                             "runs":runs})

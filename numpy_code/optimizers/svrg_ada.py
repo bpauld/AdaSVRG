@@ -61,6 +61,7 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
 
         loss, full_grad = closure(x, D, labels)
         x_tilde = x.copy()
+        num_grad_evals = num_grad_evals + n
 
         # initialize running sum of gradient norms
         if (k == 0) or (reset):
@@ -80,7 +81,7 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
             c = 1e-4
             beta = 0.9            
             reciprocal_L_hat, armijo_iter = armijo_ls(closure, D, labels, x, loss, full_grad, full_grad, reset_step_size, c, beta)
-            num_grad_evals = num_grad_evals + n * armijo_iter
+            num_grad_evals = num_grad_evals + (n * armijo_iter)/2
       
             # incorporate the correction for Adagrad
             step_size = np.linalg.norm(full_grad) * reciprocal_L_hat                        
@@ -94,11 +95,25 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
                 c = 1e-4
                 beta = 0.9            
                 reciprocal_L_hat, armijo_iter = armijo_ls(closure, D, labels, x, loss, full_grad, full_grad, reset_step_size, c, beta)
-                num_grad_evals = num_grad_evals + n * armijo_iter
+                num_grad_evals = num_grad_evals + (n * armijo_iter)/2
                 step_size = np.linalg.norm(full_grad) * reciprocal_L_hat
             else:
                 L_hat = np.linalg.norm(full_grad - last_full_grad) / np.linalg.norm(x_tilde - last_x_tilde)
                 step_size = np.linalg.norm(full_grad) / L_hat
+                
+        elif linesearch_option == 4:
+            if k == 0:
+                reset_step_size = init_step_size
+                c = 1e-4
+                beta = 0.9            
+                reciprocal_L_hat, armijo_iter = armijo_ls(closure, D, labels, x, loss, full_grad, full_grad, reset_step_size, c, beta)
+                num_grad_evals = num_grad_evals + (n * armijo_iter)/2
+                step_size = np.linalg.norm(full_grad) * reciprocal_L_hat
+            else:
+                L_hat = np.linalg.norm(full_grad - last_full_grad) / np.linalg.norm(x_tilde - last_x_tilde)
+                step_size = min(np.linalg.norm(full_grad) / (L_hat), 2*step_size)
+                
+               
 
         last_full_grad = full_grad
         last_x_tilde = x_tilde
@@ -114,7 +129,6 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
         if np.linalg.norm(full_grad) <= 1e-12:
             return score_list
 
-        num_grad_evals = num_grad_evals + n
         
         score_dict = {"epoch": k}
         score_dict["n_grad_evals"] = num_grad_evals
