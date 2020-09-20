@@ -9,6 +9,7 @@ from optimizers.svrg_bb import *
 from optimizers.svrg_ada import *
 from optimizers.svrg_cb import *
 from optimizers.sarah import *
+from optimizers.svrg_ada_at import *
 
 import argparse
 import exp_configs
@@ -170,6 +171,21 @@ def trainval(exp_dict, savedir_base, reset=False):
                            D=X, labels=y, 
                            r = r,   init_step_size = init_step_size,                          
                            D_test = X_test, labels_test=y_test)	
+
+	elif opt_dict["name"] == 'svrg_ada_at':
+		init_step_size = opt_dict["init_step_size"]
+		r = opt_dict["r"]		
+		linesearch_option = opt_dict["linesearch_option"]
+		adaptive_termination = opt_dict["adaptive_termination"]
+		reset = opt_dict["reset"]
+
+		score_list = svrg_ada_at(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
+						   max_epoch=exp_dict["max_epoch"],                                               
+                           D=X, labels=y, 
+                           r = r, init_step_size=init_step_size, 
+                           linesearch_option = linesearch_option, 
+						   adaptive_termination = adaptive_termination,                          
+                           reset = reset, D_test=X_test, labels_test=y_test)	
 
 	else:
 		print('Method does not exist')
