@@ -71,6 +71,8 @@ for eta in stepsizes:
 
 # final list of optimizers
 opt_list2 = svrg_ada_list + svrg_list + sarah_list + svrg_bb_list
+opt_list50 = svrg_list + sarah_list + svrg_bb_list
+opt_list100 =  svrg_ada_list
 # print(opt_list2)
 
 # for debugging
@@ -80,7 +82,7 @@ opt_list2 = svrg_ada_list + svrg_list + sarah_list + svrg_bb_list
 #Setup for experiment 2, with synthetic dataset 
 EXP_GROUPS['exp2'] = hu.cartesian_exp_group({"dataset":["synthetic"],
                                             "loss_func": losses,
-                                            "opt": opt_list2,
+                                            "opt": opt_list50,
                                             "regularization_factor":1e-4,
                                             'margin':[1e-6],
                                             "false_ratio" : [0.25],
@@ -89,58 +91,111 @@ EXP_GROUPS['exp2'] = hu.cartesian_exp_group({"dataset":["synthetic"],
                                             "batch_size":[1],
                                             "max_epoch":[50],
                                             "runs":runs})
+EXP_GROUPS['exp2'] += hu.cartesian_exp_group({"dataset":["synthetic"],
+                                            "loss_func": losses,
+                                            "opt": opt_list100,
+                                            "regularization_factor":1e-4,
+                                            'margin':[1e-6],
+                                            "false_ratio" : [0.25],
+                                            "n_samples": [10000],
+                                            "d": [20],
+                                            "batch_size":[1],
+                                            "max_epoch":[100],
+                                            "runs":runs})                                            
+
+
 
 #Setup for experiment 3, with dataset "mushrooms"
 EXP_GROUPS['exp3'] = hu.cartesian_exp_group({"dataset":["mushrooms"],
                                             "loss_func": losses,
-                                            "opt": opt_list2,
+                                            "opt": opt_list50,
                                             "regularization_factor":1./8000,
                                             "batch_size":[1],
                                             "max_epoch":[50],
-                                            "runs":runs})                                           
+                                            "runs":runs})
+EXP_GROUPS['exp3'] += hu.cartesian_exp_group({"dataset":["mushrooms"],
+                                            "loss_func": losses,
+                                            "opt": opt_list100,
+                                            "regularization_factor":1./8000,
+                                            "batch_size":[1],
+                                            "max_epoch":[100],
+                                            "runs":runs})                                            
 
 #Setup for experiment 4, with dataset "ijcnn"
 EXP_GROUPS['exp4'] = hu.cartesian_exp_group({"dataset":["ijcnn"],
                                             "loss_func": losses,
-                                            "opt": opt_list2,
+                                            "opt": opt_list50,
                                             "regularization_factor":1./35000,
                                             "batch_size":[1],
                                             "max_epoch":[50],
                                             "runs":runs})
+EXP_GROUPS['exp4'] += hu.cartesian_exp_group({"dataset":["ijcnn"],
+                                            "loss_func": losses,
+                                            "opt": opt_list100,
+                                            "regularization_factor":1./35000,
+                                            "batch_size":[1],
+                                            "max_epoch":[100],
+                                            "runs":runs})                                            
+                                            
 
 #Setup for experiment 5, with dataset "a1a"
 EXP_GROUPS['exp5'] = hu.cartesian_exp_group({"dataset":["a1a"],
                                             "loss_func": losses,
-                                            "opt": opt_list2,
+                                            "opt": opt_list50,
                                             "regularization_factor":1./1600,
                                             "batch_size":[1],
                                             "max_epoch":[50],
                                             "runs":runs})
+EXP_GROUPS['exp5'] += hu.cartesian_exp_group({"dataset":["a1a"],
+                                            "loss_func": losses,
+                                            "opt": opt_list100,
+                                            "regularization_factor":1./1600,
+                                            "batch_size":[1],
+                                            "max_epoch":[100],
+                                            "runs":runs})
+
 
 #Setup for experiment 6, with dataset "a2a"
 EXP_GROUPS['exp6'] = hu.cartesian_exp_group({"dataset":["a2a"],
                                             "loss_func": losses,
-                                            "opt": opt_list2,
+                                            "opt": opt_list50,
                                             "regularization_factor":1./2300,
                                             "batch_size":[1],
                                             "max_epoch":[50],
-                                            "runs":runs})   
+                                            "runs":runs})      
+EXP_GROUPS['exp6'] += hu.cartesian_exp_group({"dataset":["a2a"],
+                                            "loss_func": losses,
+                                            "opt": opt_list100,
+                                            "regularization_factor":1./2300,
+                                            "batch_size":[1],
+                                            "max_epoch":[100],
+                                            "runs":runs}) 
+
+
 
 #Setup for experiment 7, with dataset "w8a"
 EXP_GROUPS['exp7'] = hu.cartesian_exp_group({"dataset":["w8a"],
                                             "loss_func": losses,
-                                            "opt": opt_list2,
+                                            "opt": opt_list50,
                                             "regularization_factor":1./50000,
                                             "batch_size":[1],
                                             "max_epoch":[50],
                                             "runs":runs})      
+EXP_GROUPS['exp7'] += hu.cartesian_exp_group({"dataset":["w8a"],
+                                            "loss_func": losses,
+                                            "opt": opt_list100,
+                                            "regularization_factor":1./50000,
+                                            "batch_size":[1],
+                                            "max_epoch":[100],
+                                            "runs":runs})                                                                                                                                 
 
+                                                                                   
 #Setup for experiment 8, with dataset "rcv1"
 EXP_GROUPS['exp8'] = hu.cartesian_exp_group({"dataset":["rcv1"],
                                             "loss_func": losses,
                                             "opt": opt_list2,
                                             "regularization_factor":1./20000,
                                             "batch_size":[1],
-                                            "max_epoch":[50],
+                                            "max_epoch":[100],
                                             "runs":runs})
 
