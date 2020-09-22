@@ -56,7 +56,7 @@ def check_update_at(i, x,  x_tilde, checkpoint_num, save_dist,
         # print(x_dist, x_prev_dist)
 
         S = (np.log10(x_dist**2) - np.log10(x_prev_dist**2)) / (np.log10(t1) - np.log10(t2))
-        # print('S = ', S)        
+        print('S = ', S)        
         if S  < threshold:
             # print('Terminaating')
             terminate = 1 
@@ -94,12 +94,13 @@ def svrg_ada_at(score_list, closure, batch_size, D, labels,
         raise ValueError('x0 must be a numpy array of size (d, )')
 
     num_grad_evals = 0
-    num_checkpoints = 50 # number of times to check the test in each outer loop
+    # num_checkpoints = 50 # number of times to check the test in each outer loop
+    check_pt  = 0
 
     step_size = init_step_size    
 
-    if adaptive_termination == True:        
-        check_iter_indices, save_iter_indices = initialize_at(num_checkpoints, m)
+    # if adaptive_termination == True:        
+    #     check_iter_indices, save_indices = initialize_at(num_checkpoints, m)
         
     for k in range(max_epoch):
         t_start = time.time()
@@ -163,8 +164,8 @@ def svrg_ada_at(score_list, closure, batch_size, D, labels,
                 L_hat = np.linalg.norm(full_grad - last_full_grad) / np.linalg.norm(x_tilde - last_x_tilde)
                 step_size = min(np.linalg.norm(full_grad) / (L_hat), 2*step_size)
                 
-        if adaptive_termination == True:
-            checkpoint_num, save_dist = reset_at(num_checkpoints)
+        # if adaptive_termination == True:
+            # checkpoint_num, save_dist = reset_at(num_checkpoints)
                
         last_full_grad = full_grad
         last_x_tilde = x_tilde
@@ -195,6 +196,8 @@ def svrg_ada_at(score_list, closure, batch_size, D, labels,
 
         score_list += [score_dict]
         
+        check_pt  = 0 
+
         # Create Minibatches:
         minibatches = make_minibatches(n, m, batch_size)
         for i in range(m):
@@ -217,15 +220,34 @@ def svrg_ada_at(score_list, closure, batch_size, D, labels,
                 num_grad_evals = num_grad_evals + batch_size * armijo_iter
 
             if adaptive_termination == True:
-                checkpoint_num, save_dist, terminate = \
-                    check_update_at(i, x,  x_tilde, checkpoint_num, 
-                                    save_dist, save_iter_indices, check_iter_indices)  
+                if  (i % n / (2. * batch_size)) == 0 and i  > 0:
 
-                if terminate == 1 and (i > n / batch_size):                                        
-                    print('Test passed. Breaking out of inner loop at iteration ', (i+1))
-                    break            
+                    check_pt = check_pt  + 1
+                                                            
+                    if check_pt > 1:
+                        # print(Gk2)
+                        # S = (Gk2 / (i+1) - prev_Gk2)  /  (i - prev_i) 
+                        # S = (Gk2 / prev_Gk2) /  (i / prev_i)
+                        S = (Gk2 / i) / (prev_Gk2 / prev_i) 
+                        print('S =  ', S)
+
+                        if S > 1:
+                            break
+
+                    prev_Gk2 = Gk2
+                    prev_i = i
+                    # print(prev_Gk2, prev_i)
+                
+                # checkpoint_num, save_dist, terminate = \
+                #     check_update_at(i, x,  x_tilde, checkpoint_num, 
+                #                     save_dist, save_iter_indices, check_iter_indices)  
+
+                # if terminate == 1 and (i > n / (2 * batch_size)):                                        
+                    # print('Test passed. Breaking out of inner loop at iteration ', (i+1))
+                    # break            
                     
             x -= (step_size / np.sqrt(Gk2)) * gk
+            # print(np.sqrt(Gk2) / math.sqrt(i+1))
             
         t_end = time.time()
         time_epoch = t_end - t_start

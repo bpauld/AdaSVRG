@@ -4,25 +4,25 @@ import itertools
 EXP_GROUPS = {}
 
 # ------------ for debugging ----------------------- #
-# losses = ["squared_loss", "logistic_loss", "squared_hinge_loss"]
-# opt_list = []
-# opt_list += [{'name':'svrg_ada_at',
-#                 "r":5,
-#                 "init_step_size" : 1,                     
-#                 "linesearch_option": 4,
-#                 "adaptive_termination": True, 
-#                 "reset":  True}]     
-# EXP_GROUPS['exp1'] = hu.cartesian_exp_group({"dataset":["synthetic"],
-#                                             "loss_func": losses,
-#                                             "opt": opt_list,
-#                                             "regularization_factor":1e-4,
-#                                             'margin':[1e-6],
-#                                             "false_ratio" : [0.25],
-#                                             "n_samples": [10000],
-#                                             "d": [20],
-#                                             "batch_size":[1],
-#                                             "max_epoch":[100],
-                                            # "runs":[0]})
+losses = ["squared_hinge_loss", "logistic_loss", "squared_loss" ]
+opt_list = []
+opt_list += [{'name':'svrg_ada_at',
+                "r":10,
+                "init_step_size" : 1,                     
+                "linesearch_option": 3,
+                "adaptive_termination": True, 
+                "reset":  True}]     
+EXP_GROUPS['exp1'] = hu.cartesian_exp_group({"dataset":["mushrooms"],
+                                            "loss_func": losses,
+                                            "opt": opt_list,
+                                            "regularization_factor":1e-4,
+                                            'margin':[1e-6],
+                                            "false_ratio" : [0.25],
+                                            "n_samples": [10000],
+                                            "d": [20],
+                                            "batch_size":[1],
+                                            "max_epoch":[100],
+                                            "runs":[0]})
 # ------------ for debugging ----------------------- #                                            
 
 #Setup for comparing svrg, svrg_bb, and svrg_ada 
