@@ -38,19 +38,18 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
 
     num_grad_evals = 0
 
-
+    #check adaptive termination every "interval_size" iterations
+    interval_size = 10 #hardcoding this for now
     if adaptive_termination == 2:
-        # hardcoding these parameters for now. 
-        q = 1.5
-        k0 = 5                
-        num_checkpoints = 20 # number of times to check
+        # hardcoding these parameters for now.
         threshold  = 0.6
-
-        start = int(q**(k0))
+        num_checkpoints = int((m - (min(n,m)/2))/interval_size)
+        start = int(min(n,m)/2)
+        q = 1.5
             
         check_iter_indices = list(map(int,  list(np.linspace(start, m, num_checkpoints))))
         save_iter_indices = list(map(int, np.linspace(start, m, num_checkpoints) / q))
-        print(check_iter_indices, save_iter_indices)
+        #print(check_iter_indices, save_iter_indices)
                     
     for k in range(max_epoch):
 
@@ -66,6 +65,7 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
 
         loss, full_grad = closure(x, D, labels)
         x_tilde = x.copy()
+        num_grad_evals = num_grad_evals + n
 
         last_full_grad = full_grad
         last_x_tilde = x_tilde
@@ -86,7 +86,7 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
             break
 
 
-        num_grad_evals = num_grad_evals + n
+        
 
         score_dict = {"epoch": k}
         score_dict["n_grad_evals"] = num_grad_evals
@@ -120,15 +120,15 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
             num_grad_evals = num_grad_evals + batch_size
 
             if adaptive_termination == 1:
-                if (i+1) >= int(n/2.): # evaluate the statistic halfway through the inner loop
+                if (i+1) >= int(min(n,m)/2): # evaluate the statistic halfway through the inner loop
                     term1, term2 = compute_pflug_statistic(term1, term2, (i+1), x, gk, step_size)
-                    if (np.abs(term1 - term2)) < 1e-10:
-                        print('Test passed. Breaking out of inner loop at iteration ', (i+1))
-                        x -= step_size * gk
-                        break
-
+                    if (i+1) % interval_size == 0:
+                        if (np.abs(term1 - term2)) < 1e-10:
+                            print('Test passed. Breaking out of inner loop at iteration ', (i+1))
+                            x -= step_size * gk
+                            break                                       
+                        
             if adaptive_termination == 2:
-
                 if (i+1) in (save_iter_indices):                    
                     save_dist[checkpoint_num] = np.linalg.norm(x - x_tilde)
                     checkpoint_num += 1

@@ -89,7 +89,6 @@ def trainval(exp_dict, savedir_base, reset=False):
 
 		X, y, X_test, y_test = data_load(data_dir, exp_dict["dataset"] , n, d, false_ratio, is_subsample, is_kernelize)
 		n = X.shape[0]
-	    
 	#define the regularized losses we will use
 	regularization_factor = exp_dict["regularization_factor"]
 	if exp_dict["loss_func"] == "logistic_loss":
@@ -142,12 +141,14 @@ def trainval(exp_dict, savedir_base, reset=False):
 		r = opt_dict["r"]		
 		linesearch_option = opt_dict["linesearch_option"]
 		reset = opt_dict["reset"]
+		adaptive_termination = opt_dict["adaptive_termination"]
 
 		score_list = svrg_ada(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               
                            D=X, labels=y, 
                            r = r, init_step_size=init_step_size, 
-                           linesearch_option = linesearch_option,                         
+                           linesearch_option = linesearch_option,
+                           adaptive_termination = adaptive_termination,
                            reset = reset, D_test=X_test, labels_test=y_test)
 
 	elif opt_dict["name"] == 'svrg_cb':

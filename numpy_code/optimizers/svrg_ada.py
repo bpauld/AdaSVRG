@@ -24,7 +24,8 @@ def armijo_ls(closure, D, labels, x, loss, grad, p, init_step_size, c, beta):
 
 def svrg_ada(score_list, closure, batch_size, D, labels, 
             init_step_size = 1, max_epoch=100, r=0, x0=None, verbose=True,
-            linesearch_option = 1, 
+            linesearch_option = 1,
+            adaptive_termination = False,
             D_test=None, labels_test=None, reset = True):
     """
         SVRG with fixed step size for solving finite-sum problems
@@ -53,6 +54,7 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
         raise ValueError('x0 must be a numpy array of size (d, )')
 
     num_grad_evals = 0
+    check_pt  = 0
 
     step_size = init_step_size    
 
@@ -113,6 +115,17 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
                 L_hat = np.linalg.norm(full_grad - last_full_grad) / np.linalg.norm(x_tilde - last_x_tilde)
                 step_size = min(np.linalg.norm(full_grad) / (L_hat), 2*step_size)
                 
+        elif linesearch_option == 5:
+            if k == 0:
+                x_rand = np.random.normal(0, 1, d)
+                loss_rand , full_grad_rand = closure(x_rand, D, labels)
+                num_grad_evals = num_grad_evals + n
+                L_hat = np.linalg.norm(full_grad - full_grad_rand) / np.linalg.norm(x_tilde - x_rand)
+                step_size = np.linalg.norm(full_grad) / L_hat           
+            else:
+                L_hat = np.linalg.norm(full_grad - last_full_grad) / np.linalg.norm(x_tilde - last_x_tilde)
+                step_size = np.linalg.norm(full_grad) / L_hat
+                
                
 
         last_full_grad = full_grad
@@ -165,6 +178,20 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
                 beta = 0.9
                 step_size, armijo_iter = armijo_ls(closure, Di, labels_i, x, loss_temp, x_grad, gk, reset_step_size, c, beta)
                 num_grad_evals = num_grad_evals + batch_size * armijo_iter
+                
+            if adaptive_termination == True:
+                interval_size = 10 #hardcoding this for now
+                if (i % interval_size == 0) and  i >= int(min(n,m)/2) :
+                    check_pt = check_pt  + 1                                                            
+                    if check_pt > 1:
+                        S = (Gk2 / i) / (prev_Gk2 / prev_i) 
+                        if S > 1:
+                            print('Breaking out of inner loop at iteration', i)
+                            break
+
+                    prev_Gk2 = Gk2
+                    prev_i = i
+            
             
             x -= (step_size / np.sqrt(Gk2)) * gk
             
