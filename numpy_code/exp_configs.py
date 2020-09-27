@@ -150,7 +150,7 @@ for at in [1,2]:
     opt_list9 += [{'name':'svrg',
                 "r":10,
                 "adaptive_termination": at,
-                "init_step_size" : 1e-3}
+                "init_step_size" : 1e-3}]
 EXP_GROUPS['exp9'] = hu.cartesian_exp_group({"dataset":["synthetic"],
                                             "loss_func": losses,
                                             "opt": opt_list9,
@@ -168,7 +168,7 @@ for at in [1,2]:
     opt_list10 += [{'name':'svrg',
                 "r":10,
                 "adaptive_termination": at,
-                "init_step_size" : 1e-2}
+                "init_step_size" : 1e-2}]
 EXP_GROUPS['exp10'] = hu.cartesian_exp_group({"dataset":["mushrooms"],
                                             "loss_func": losses,
                                             "opt": opt_list10,
@@ -182,7 +182,7 @@ for at in [1,2]:
     opt_list11 += [{'name':'svrg',
                 "r":10,
                 "adaptive_termination": at,
-                "init_step_size" : 1e-1}
+                "init_step_size" : 1e-1}]
 EXP_GROUPS['exp11'] = hu.cartesian_exp_group({"dataset":["ijcnn"],
                                             "loss_func": losses,
                                             "opt": opt_list11,
@@ -196,7 +196,7 @@ for at in [1,2]:
     opt_list12 += [{'name':'svrg',
                 "r":10,
                 "adaptive_termination": at,
-                "init_step_size" : 1e-2}
+                "init_step_size" : 1e-2}]
 EXP_GROUPS['exp12'] = hu.cartesian_exp_group({"dataset":["a1a"],
                                             "loss_func": losses,
                                             "opt": opt_list12,

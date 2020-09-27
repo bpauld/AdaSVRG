@@ -199,3 +199,151 @@ EXP_GROUPS['exp8'] = hu.cartesian_exp_group({"dataset":["rcv1"],
                                             "max_epoch":[100],
                                             "runs":runs})
 
+#================================ Setup for experiments on adaptive termination for svrg ========================================
+opt_list9 = []
+for at in [1,2]:
+    opt_list9 += [{'name':'svrg',
+                "r":10,
+                "adaptive_termination": at,
+                "init_step_size" : 1e-3}]
+EXP_GROUPS['exp9'] = hu.cartesian_exp_group({"dataset":["synthetic"],
+                                            "loss_func": losses,
+                                            "opt": opt_list9,
+                                            "regularization_factor":1e-4,
+                                            'margin':[1e-6],
+                                            "false_ratio" : [0.25],
+                                            "n_samples": [10000],
+                                            "d": [20],
+                                            "batch_size":[1],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+                                  
+opt_list10 = []
+for at in [1,2]:
+    opt_list10 += [{'name':'svrg',
+                "r":10,
+                "adaptive_termination": at,
+                "init_step_size" : 1e-2}]
+EXP_GROUPS['exp10'] = hu.cartesian_exp_group({"dataset":["mushrooms"],
+                                            "loss_func": losses,
+                                            "opt": opt_list10,
+                                            "regularization_factor":1./8000,
+                                            "batch_size":[1],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+                   
+opt_list11 = []
+for at in [1,2]:
+    opt_list11 += [{'name':'svrg',
+                "r":10,
+                "adaptive_termination": at,
+                "init_step_size" : 1e-1}]
+EXP_GROUPS['exp11'] = hu.cartesian_exp_group({"dataset":["ijcnn"],
+                                            "loss_func": losses,
+                                            "opt": opt_list11,
+                                            "regularization_factor":1./35000,
+                                            "batch_size":[1],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+                   
+opt_list12 = []
+for at in [1,2]:
+    opt_list12 += [{'name':'svrg',
+                "r":10,
+                "adaptive_termination": at,
+                "init_step_size" : 1e-2}]
+EXP_GROUPS['exp12'] = hu.cartesian_exp_group({"dataset":["a1a"],
+                                            "loss_func": losses,
+                                            "opt": opt_list12,
+                                            "regularization_factor":1./1600,
+                                            "batch_size":[1],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+                   
+#========================== Setup for experiments with svrg-ada with linesearch option 5 ====================================
+svrg_ada_ls5_list = [{'name':'svrg_ada',
+                "r":0,
+                "adaptive_termination": False,
+                "linesearch_option":5,
+                "reset":True,
+                "init_step_size" : 1}]
+                   
+EXP_GROUPS['exp13'] = hu.cartesian_exp_group({"dataset":["synthetic"],
+                                            "loss_func": losses,
+                                            "opt": svrg_ada_ls5_list,
+                                            "regularization_factor":1e-4,
+                                            'margin':[1e-6],
+                                            "false_ratio" : [0.25],
+                                            "n_samples": [10000],
+                                            "d": [20],
+                                            "batch_size":[1],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+
+EXP_GROUPS['exp14'] = hu.cartesian_exp_group({"dataset":["mushrooms"],
+                                            "loss_func": losses,
+                                            "opt": svrg_ada_ls5_list,
+                                            "regularization_factor":1./8000,
+                                            "batch_size":[1],
+                                            "max_epoch":[50],
+                                            "runs":runs})                                           
+
+EXP_GROUPS['exp15'] = hu.cartesian_exp_group({"dataset":["ijcnn"],
+                                            "loss_func": losses,
+                                            "opt": svrg_ada_ls5_list,
+                                            "regularization_factor":1./35000,
+                                            "batch_size":[1],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+
+EXP_GROUPS['exp16'] = hu.cartesian_exp_group({"dataset":["a1a"],
+                                            "loss_func": losses,
+                                            "opt": svrg_ada_ls5_list,
+                                            "regularization_factor":1./1600,
+                                            "batch_size":[1],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+                   
+#=================================== Setup for experiments with svrg-ada with adaptive termination ===============================
+svrg_ada_at_list = [{'name':'svrg_ada',
+                "r":10,
+                "adaptive_termination": True,
+                "linesearch_option":5,
+                "reset":True,
+                "init_step_size" : 1}]
+                   
+EXP_GROUPS['exp17'] = hu.cartesian_exp_group({"dataset":["synthetic"],
+                                            "loss_func": losses,
+                                            "opt": svrg_ada_at_list,
+                                            "regularization_factor":1e-4,
+                                            'margin':[1e-6],
+                                            "false_ratio" : [0.25],
+                                            "n_samples": [10000],
+                                            "d": [20],
+                                            "batch_size":[1],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+
+EXP_GROUPS['exp18'] = hu.cartesian_exp_group({"dataset":["mushrooms"],
+                                            "loss_func": losses,
+                                            "opt": svrg_ada_at_list,
+                                            "regularization_factor":1./8000,
+                                            "batch_size":[1],
+                                            "max_epoch":[50],
+                                            "runs":runs})                                           
+
+EXP_GROUPS['exp19'] = hu.cartesian_exp_group({"dataset":["ijcnn"],
+                                            "loss_func": losses,
+                                            "opt": svrg_ada_at_list,
+                                            "regularization_factor":1./35000,
+                                            "batch_size":[1],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+
+EXP_GROUPS['exp20'] = hu.cartesian_exp_group({"dataset":["a1a"],
+                                            "loss_func": losses,
+                                            "opt": svrg_ada_at_list,
+                                            "regularization_factor":1./1600,
+                                            "batch_size":[1],
+                                            "max_epoch":[50],
+                                            "runs":runs})
