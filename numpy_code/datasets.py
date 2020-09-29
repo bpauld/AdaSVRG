@@ -26,7 +26,8 @@ def load_libsvm(name, data_dir):
     return [X, y]
 
 
-def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0, is_subsample=0, is_kernelize=0,
+def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0, 
+              is_subsample=0, is_kernelize=0,
               test_prop=0.2, split_seed=9513451, standardize = False):
     
     if (dataset_name != 'synthetic'):
@@ -120,11 +121,13 @@ def create_dataset(n, d, gamma=0, false_ratio=0):
     X = np.zeros((n, d))
     y = np.zeros((n))
 
+    print(false_ratio, gamma)
+
     while (1):
 
         x = np.random.normal(1, 1, (1, d))
         # normalize x s.t. || x ||_2 = 1
-        #         x = x / np.linalg.norm(x)
+        x = x / np.linalg.norm(x)
 
         temp = np.dot(x, w_star)
         margin = abs(temp)
