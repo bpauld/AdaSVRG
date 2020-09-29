@@ -112,7 +112,7 @@ def create_dataset(n, d, gamma=0, false_ratio=0):
     # w_star = np.random.random((d,1))
     w_star = np.random.normal(0, 1, (d, 1))
     # normalize w_star
-    w_star = w_star / np.linalg.norm(w_star)
+    # w_star = w_star / np.linalg.norm(w_star)
 
     num_positive = 0
     num_negative = 0

@@ -11,6 +11,7 @@ from optimizers.svrg_cb import *
 from optimizers.sarah import *
 from optimizers.svrg_ada_at import *
 from optimizers.sls import *
+from optimizers.sls_svrg_ada import *
 
 import argparse
 import exp_configs
@@ -197,7 +198,17 @@ def trainval(exp_dict, savedir_base, reset=False):
 						init_step_size=init_step_size, 
 						D = X, labels = y, 						
          				adaptive_termination = adaptive_termination,  
-						D_test=X_test, labels_test=y_test)
+						D_test=X_test, labels_test=y_test)[0]
+
+	elif opt_dict["name"] == 'sls_svrg_ada':		
+		adaptive_termination = opt_dict["adaptive_termination"]			
+		r = opt_dict["r"]		
+		score_list = sls_svrg_ada(score_list, closure = closure, 
+					batch_size=exp_dict["batch_size"], 
+					max_epoch=exp_dict["max_epoch"], 
+					r = r, adaptive_termination = adaptive_termination, 
+					D = X, labels = y, 											
+					D_test=X_test, labels_test=y_test)
 
 	else:
 		print('Method does not exist')

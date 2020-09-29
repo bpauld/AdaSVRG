@@ -3,25 +3,58 @@ import itertools
 
 EXP_GROUPS = {}
 
-# ------------ for debugging ----------------------- #
-losses = ["squared_loss", "logistic_loss", "squared_hinge_loss"]
-opt_list = []
-opt_list += [{'name':'svrg',
+
+# ------- for checking hybrid version with and without interpolation ----------- #  
+losses = ["squared_hinge_loss", "logistic_loss"]
+debug_opt_list = []
+debug_opt_list += [{'name':'svrg',
                 "r":1,
-                "init_step_size" : 1e-2]     
-EXP_GROUPS['exp0'] = hu.cartesian_exp_group({"dataset":["synthetic"],
+                "init_step_size" : 1e-2,
+                "adaptive_termination": 0}]    
+
+debug_opt_list += [{'name':'svrg_ada',
+                "r":1,
+                "adaptive_termination": False,
+                "linesearch_option":5,
+                "reset":True,
+                "init_step_size" : 1}]  
+
+debug_opt_list += [{'name':'sls_svrg_ada',      
+                "r" : 1, 
+                "adaptive_termination": 2}]    
+
+debug_opt_list += [{'name':'sls',      
+                "r" : 1, 
+                "adaptive_termination": 0,
+                "init_step_size" : None}]                      
+
+# without interpolation
+EXP_GROUPS['exp0_1'] = hu.cartesian_exp_group({"dataset":["synthetic"],
                                             "loss_func": losses,
-                                            "opt": opt_list,
-                                            "regularization_factor":0,
-                                            'margin':[0.01],
-                                            "false_ratio" : [0],
+                                            "opt": debug_opt_list,
+                                            "regularization_factor":1e-3,
+                                            'margin':[1e-6],
+                                            "false_ratio" : [0.25],
                                             "n_samples": [10000],
                                             "d": [20],
-                                            "batch_size":[1],
-                                            "max_epoch":[100],
+                                            "batch_size":[100],
+                                            "max_epoch":[50],
                                             "runs":[0]})
-# ------------ for debugging ----------------------- #  
+# # with interpolation
+EXP_GROUPS['exp0_2'] = hu.cartesian_exp_group({"dataset":["synthetic"],
+                                            "loss_func": losses,
+                                            "opt": debug_opt_list,
+                                            "regularization_factor":0.,
+                                            'margin':[1e-1],
+                                            "false_ratio" : [0.],
+                                            "n_samples": [10000],
+                                            "d": [20],
+                                            "batch_size":[100],
+                                            "max_epoch":[20],
+                                            "runs":[0]})                                            
+# ------- for checking hybrid version with and without interpolation ----------- #  
 
+# ------------ for convergence under interpolation ----------------------- #  
 losses = ["logistic_loss", "squared_hinge_loss"]
 opt_list = []
 
@@ -33,7 +66,15 @@ for eta in [1e-1, 1e-2, 1e-3, 1e-4]:
 
     opt_list += [{'name':'sls',      
                 "init_step_size":  eta,          
-                "adaptive_termination": 0}]    
+                "adaptive_termination": 0}]  
+
+    opt_list += [{'name':'sls',      
+                "init_step_size":  None,          
+                "adaptive_termination": 0}]  
+
+    opt_list += [{'name':'sls_svrg_ada',      
+                "r" : 1, 
+                "adaptive_termination": 2}]                 
 
 EXP_GROUPS['exp1_1'] = hu.cartesian_exp_group({"dataset":["synthetic"],
                                             "loss_func": losses,
@@ -70,8 +111,7 @@ EXP_GROUPS['exp1_3'] = hu.cartesian_exp_group({"dataset":["synthetic"],
                                             "batch_size":[1],
                                             "max_epoch":[50],
                                             "runs":[0]})                                                                                                                 
-
-
+# ------------ for convergence under interpolation ----------------------- #      
 
 #Setup for comparing svrg, svrg_bb, and svrg_ada 
 losses = ["logistic_loss", "squared_hinge_loss", "squared_loss"]
