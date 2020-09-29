@@ -53,10 +53,10 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
                     
     for k in range(max_epoch):
 
-        if num_grad_evals >= 2 * n * max_epoch:
-            # exceeds the number of standard SVRG gradient evaluations (only for batch-size = 1)
-            print('End of budget for gradient evaluations')
-            break
+        # if num_grad_evals >= 2 * n * max_epoch:
+        #     # exceeds the number of standard SVRG gradient evaluations (only for batch-size = 1)
+        #     print('End of budget for gradient evaluations')
+        #     break
         t_start = time.time()
 
         if adaptive_termination == 2:
@@ -84,9 +84,6 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
 
         if np.linalg.norm(full_grad) <= 1e-12:
             break
-
-
-        
 
         score_dict = {"epoch": k}
         score_dict["n_grad_evals"] = num_grad_evals

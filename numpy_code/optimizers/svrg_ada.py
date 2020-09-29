@@ -47,7 +47,7 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
         print('Info: set m = ', r, ' n')
 
     if x0 is None:
-        x = np.zeros(d)
+        x = np.zeros(d)        
     elif isinstance(x0, np.ndarray) and x0.shape == (d,):
         x = x0.copy()
     else:
@@ -121,13 +121,23 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
                 loss_rand , full_grad_rand = closure(x_rand, D, labels)
                 num_grad_evals = num_grad_evals + n
                 L_hat = np.linalg.norm(full_grad - full_grad_rand) / np.linalg.norm(x_tilde - x_rand)
-                step_size = np.linalg.norm(full_grad) / L_hat           
+
+                # to prevent the step-size from blowing up. 
+                if (L_hat < 1e-8):
+                    step_size = 1e-4
+                else:
+                    step_size = np.linalg.norm(full_grad) / L_hat
+                       
             else:
                 L_hat = np.linalg.norm(full_grad - last_full_grad) / np.linalg.norm(x_tilde - last_x_tilde)
-                step_size = np.linalg.norm(full_grad) / L_hat
-                
-               
 
+                # to prevent the step-size from blowing up. 
+                if (L_hat < 1e-8):
+                    step_size =  1e-4 # some small default step-size
+                else:
+                    step_size = np.linalg.norm(full_grad) / L_hat
+                
+                
         last_full_grad = full_grad
         last_x_tilde = x_tilde
 
@@ -142,7 +152,6 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
         if np.linalg.norm(full_grad) <= 1e-12:
             return score_list
 
-        
         score_dict = {"epoch": k}
         score_dict["n_grad_evals"] = num_grad_evals
         score_dict["train_loss"] = loss
