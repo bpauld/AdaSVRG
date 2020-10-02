@@ -20,6 +20,7 @@ def sls_svrg_ada(score_list, closure, batch_size, D, labels,
 
     print('SLS grad evals = ', sls_grad_evals )
     print('SLS epochs = ', sls_epochs )
+    len_first_list = len(score_list_sls)
 
     score_list = svrg_ada(score_list, x0 = x_sls, closure=closure,batch_size=batch_size,
                     max_epoch=max_epoch - sls_epochs,                
@@ -29,7 +30,7 @@ def sls_svrg_ada(score_list, closure, batch_size, D, labels,
                     adaptive_termination = False,
                     reset = True, D_test=D_test, labels_test=labels_test)
 
-    for i in range(len(score_list)):
+    for i in range(len_first_list, len(score_list)):
         score_list[i]["n_grad_evals"]  += sls_grad_evals
-
+        score_list[i]["epoch"] += len_first_list
     return score_list
