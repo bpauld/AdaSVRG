@@ -7,7 +7,8 @@ import time
 
 
 def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=100, 
-         r=0, x0=None, verbose=True, adaptive_termination = 0,  D_test=None, labels_test=None):
+         r=0, x0=None, verbose=True, adaptive_termination = 0,  D_test=None, labels_test=None,
+        interval_size=10, threshold_at=1e-10):
     """
         SVRG with fixed step size for solving finite-sum problems
         Closure: a PyTorch-style closure returning the objective value and it's gradient.
@@ -39,17 +40,13 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
     num_grad_evals = 0
 
     #check adaptive termination every "interval_size" iterations
-    interval_size = 10 #hardcoding this for now
     if adaptive_termination == 2:
-        # hardcoding these parameters for now.
-        threshold  = 0.6
         num_checkpoints = int((m - (min(n,m)/2))/interval_size)
         start = int(min(n,m)/2)
-        q = 1.5
+        q = 1.5 #hardcoding this
             
         check_iter_indices = list(map(int,  list(np.linspace(start, m, num_checkpoints))))
         save_iter_indices = list(map(int, np.linspace(start, m, num_checkpoints) / q))
-        #print(check_iter_indices, save_iter_indices)
                     
     for k in range(max_epoch):
 
@@ -82,8 +79,13 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
             print(output) 
 
 
-        if np.linalg.norm(full_grad) <= 1e-12:
-            break
+        full_grad_norm = np.linalg.norm(full_grad)
+        if full_grad_norm <= 1e-12:
+            return score_list
+        elif full_grad_norm >= 1e10:
+            return score_list
+        elif np.isnan(full_grad_norm):
+            return score_list
 
         score_dict = {"epoch": k}
         score_dict["n_grad_evals"] = num_grad_evals
@@ -92,13 +94,11 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
         score_dict["train_accuracy"] = accuracy(x, D, labels)
         score_dict["train_loss_log"] = np.log(loss)
         score_dict["grad_norm_log"] = np.log(score_dict["grad_norm"])
-        # score_dict["train_accuracy_log"] = np.log(score_dict["train_accuracy"])
         if D_test is not None:
             test_loss = closure(x, D_test, labels_test, backwards=False)
             score_dict["test_loss"] = test_loss
             score_dict["test_accuracy"] = accuracy(x, D_test, labels_test)
             score_dict["test_loss_log"] = np.log(test_loss)
-            # score_dict["test_accuracy_log"] = np.log(score_dict["test_accuracy"])
 
 
         score_list += [score_dict]
@@ -120,7 +120,7 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
                 if (i+1) >= int(min(n,m)/2): # evaluate the statistic halfway through the inner loop
                     term1, term2 = compute_pflug_statistic(term1, term2, (i+1), x, gk, step_size)
                     if (i+1) % interval_size == 0:
-                        if (np.abs(term1 - term2)) < 1e-10:
+                        if (np.abs(term1 - term2)) < threshold_at:
                             print('Test passed. Breaking out of inner loop at iteration ', (i+1))
                             x -= step_size * gk
                             break                                       
@@ -128,19 +128,16 @@ def svrg(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=1
             if adaptive_termination == 2:
                 if (i+1) in (save_iter_indices):                    
                     save_dist[checkpoint_num] = np.linalg.norm(x - x_tilde)
-                    checkpoint_num += 1
-            
-                elif ((i+1) in check_iter_indices):
-               
-                    t1 = i+1
-                                
+                    checkpoint_num += 1   
+                elif ((i+1) in check_iter_indices):        
+                    t1 = i+1                              
                     ind = check_iter_indices.index(i+1)                    
                     x_prev_dist = save_dist[ind]
                     x_dist = np.linalg.norm(x - x_tilde)
                     t2 = save_iter_indices[ind]
                     S = (np.log(x_dist**2) - np.log(x_prev_dist**2)) / (np.log(t1) - np.log(t2))
                     # print('S = ', S)
-                    if S < threshold:
+                    if S < threshold_at:
                         x -= step_size * gk
                         print('Test passed. Breaking out of inner loop at iteration ', (i+1))
                         break

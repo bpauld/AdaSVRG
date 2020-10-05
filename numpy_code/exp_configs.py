@@ -403,4 +403,200 @@ EXP_GROUPS['exp22'] = hu.cartesian_exp_group({"dataset":["w8a"],
                                             "regularization_factor":1./1600,
                                             "batch_size":[1],
                                             "max_epoch":[50],
-                                            "runs":runs})                                                    
+                                            "runs":runs})               
+
+
+#=============================== Experiments to test with different batch size with m=n ==================================
+#Setup for comparing svrg, svrg_bb, and svrg_ada 
+losses = ["logistic_loss", "squared_hinge_loss", "squared_loss"]
+stepsizes = [1e-3, 1e-2, 1e-1]
+runs = [0,1,2,3,4]
+batch_sizes = [10, 50, 100, 500]
+ 
+EXP_GROUPS['exp23'] = []
+for b in batch_sizes:
+    opt_list = []
+    for eta in stepsizes:
+        opt_list += [{'name':'svrg',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]      
+        opt_list += [{'name':'svrg_bb',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]
+    opt_list += [{'name':'svrg_ada',
+                 "r":1/b,
+                 "init_step_size" : 1,                            
+                 "linesearch_option": 1,
+                 "reset":  True,
+                 "adaptive_termination":False}]
+    EXP_GROUPS['exp23'] += hu.cartesian_exp_group({"dataset":["synthetic"],
+                                            "loss_func": losses,
+                                            "opt": opt_list,
+                                            "regularization_factor":1e-4,
+                                            'margin':[1e-6],
+                                            "false_ratio" : [0.25],
+                                            "n_samples": [10000],
+                                            "d": [20],
+                                            "batch_size":[b],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+    
+EXP_GROUPS['exp24'] = []
+for b in batch_sizes:
+    opt_list = []
+    for eta in stepsizes:
+        opt_list += [{'name':'svrg',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]      
+        opt_list += [{'name':'svrg_bb',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]
+    opt_list += [{'name':'svrg_ada',
+                 "r":1/b,
+                 "init_step_size" : 1,                            
+                 "linesearch_option": 1,
+                 "reset":  True,
+                 "adaptive_termination":False}]
+    EXP_GROUPS['exp24'] += hu.cartesian_exp_group({"dataset":["mushrooms"],
+                                            "loss_func": losses,
+                                            "opt": opt_list,
+                                            "regularization_factor":1./8000,
+                                            "batch_size":[b],
+                                            "max_epoch":[50],
+                                            "runs":runs}) 
+
+EXP_GROUPS['exp25'] = []
+for b in batch_sizes:
+    opt_list = []
+    for eta in stepsizes:
+        opt_list += [{'name':'svrg',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]      
+        opt_list += [{'name':'svrg_bb',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]
+    opt_list += [{'name':'svrg_ada',
+                 "r":1/b,
+                 "init_step_size" : 1,                            
+                 "linesearch_option": 1,
+                 "reset":  True,
+                 "adaptive_termination":False}]
+    EXP_GROUPS['exp25'] += hu.cartesian_exp_group({"dataset":["ijcnn"],
+                                            "loss_func": losses,
+                                            "opt": opt_list,
+                                            "regularization_factor":1./35000,
+                                            "batch_size":[b],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+
+    
+EXP_GROUPS['exp26'] = []
+for b in batch_sizes:
+    opt_list = []
+    for eta in stepsizes:
+        opt_list += [{'name':'svrg',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]      
+        opt_list += [{'name':'svrg_bb',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]
+    opt_list += [{'name':'svrg_ada',
+                 "r":1/b,
+                 "init_step_size" : 1,                            
+                 "linesearch_option": 1,
+                 "reset":  True,
+                 "adaptive_termination":False}]
+    EXP_GROUPS['exp26'] += hu.cartesian_exp_group({"dataset":["a1a"],
+                                            "loss_func": losses,
+                                            "opt": opt_list,
+                                            "regularization_factor":1./1600,
+                                            "batch_size":[b],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+    
+    
+EXP_GROUPS['exp27'] = []
+for b in batch_sizes:
+    opt_list = []
+    for eta in stepsizes:
+        opt_list += [{'name':'svrg',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]      
+        opt_list += [{'name':'svrg_bb',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]
+    opt_list += [{'name':'svrg_ada',
+                 "r":1/b,
+                 "init_step_size" : 1,                            
+                 "linesearch_option": 1,
+                 "reset":  True,
+                 "adaptive_termination":False}]
+    EXP_GROUPS['exp27'] += hu.cartesian_exp_group({"dataset":["a2a"],
+                                            "loss_func": losses,
+                                            "opt": opt_list,
+                                            "regularization_factor":1./2300,
+                                            "batch_size":[b],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+
+EXP_GROUPS['exp28'] = []
+for b in batch_sizes:
+    opt_list = []
+    for eta in stepsizes:
+        opt_list += [{'name':'svrg',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]      
+        opt_list += [{'name':'svrg_bb',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]
+    opt_list += [{'name':'svrg_ada',
+                 "r":1/b,
+                 "init_step_size" : 1,                            
+                 "linesearch_option": 1,
+                 "reset":  True,
+                 "adaptive_termination":False}]
+    EXP_GROUPS['exp28'] += hu.cartesian_exp_group({"dataset":["w8a"],
+                                            "loss_func": losses,
+                                            "opt": opt_list,
+                                            "regularization_factor":1./50000,
+                                            "batch_size":[b],
+                                            "max_epoch":[50],
+                                            "runs":runs})
+    
+EXP_GROUPS['exp29'] = []
+for b in batch_sizes:
+    opt_list = []
+    for eta in stepsizes:
+        opt_list += [{'name':'svrg',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]      
+        opt_list += [{'name':'svrg_bb',
+                "r":1/b,
+                "adaptive_termination": 0,
+                "init_step_size" : eta}]
+    opt_list += [{'name':'svrg_ada',
+                 "r":1/b,
+                 "init_step_size" : 1,                            
+                 "linesearch_option": 1,
+                 "reset":  True,
+                 "adaptive_termination":False}]   
+    EXP_GROUPS['exp29'] += hu.cartesian_exp_group({"dataset":["rcv1"],
+                                            "loss_func": losses,
+                                            "opt": opt_list,
+                                            "regularization_factor":1./20000,
+                                            "batch_size":[b],
+                                            "max_epoch":[50],
+                                            "runs":runs})

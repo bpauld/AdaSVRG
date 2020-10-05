@@ -121,11 +121,19 @@ def trainval(exp_dict, savedir_base, reset=False):
 	    init_step_size = opt_dict["init_step_size"]
 	    r = opt_dict["r"]
 	    adaptive_termination = opt_dict["adaptive_termination"]
+	    if "interval_size" in opt_dict.keys():
+		    interval_size = opt_dict["interval_size"]
+	    else:
+		    interval_size=10
+	    if "threshold_at" in opt_dict.keys():
+		    threshold_at = opt_dit["threshold_at"]
+	    else:
+		    threshold_at = 1
 
 	    score_list = svrg(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               
                            D=X, labels=y,
-                           init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination, D_test=X_test, labels_test=y_test)
+                           init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination, D_test=X_test, labels_test=y_test, interval_size=interval_size, threshold_at=threshold_at)
 
 
 	elif opt_dict["name"] in ['svrg_bb']:		
@@ -144,6 +152,14 @@ def trainval(exp_dict, savedir_base, reset=False):
 		linesearch_option = opt_dict["linesearch_option"]
 		reset = opt_dict["reset"]
 		adaptive_termination = opt_dict["adaptive_termination"]
+		if "interval_size" in opt_dict.keys():
+			interval_size = opt_dict["interval_size"]
+		else:
+			interval_size=10
+		if "threshold_at" in opt_dict.keys():
+			threshold_at = opt_dit["threshold_at"]
+		else:
+			threshold_at = 1
 
 		score_list = svrg_ada(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               
@@ -151,7 +167,7 @@ def trainval(exp_dict, savedir_base, reset=False):
                            r = r, init_step_size=init_step_size, 
                            linesearch_option = linesearch_option,
                            adaptive_termination = adaptive_termination,
-                           reset = reset, D_test=X_test, labels_test=y_test)
+                           reset = reset, D_test=X_test, labels_test=y_test, interval_size=interval_size, threshold_at=threshold_at)
 
 	elif opt_dict["name"] == 'svrg_cb':
 		r = opt_dict["r"]

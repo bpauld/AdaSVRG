@@ -64,9 +64,12 @@ def svrg_bb(score_list, closure, batch_size, D, labels,
             output += ', Num gradient evaluations: %d' % num_grad_evals
             print(output) 
 
-        # Add termination condition based on the norm of full gradient
-        # Without this, "np.dot(s, y)" can underflow and produce divide-by-zero errors.
-        if np.linalg.norm(full_grad) <= 1e-12:
+        full_grad_norm = np.linalg.norm(full_grad)
+        if full_grad_norm <= 1e-12:
+            return score_list
+        elif full_grad_norm >= 1e10:
+            return score_list
+        elif np.isnan(full_grad_norm):
             return score_list
 
         num_grad_evals = num_grad_evals + n
@@ -78,13 +81,11 @@ def svrg_bb(score_list, closure, batch_size, D, labels,
         score_dict["train_accuracy"] = accuracy(x, D, labels)
         score_dict["train_loss_log"] = np.log(loss)
         score_dict["grad_norm_log"] = np.log(score_dict["grad_norm"])
-        # score_dict["train_accuracy_log"] = np.log(score_dict["train_accuracy"])
         if D_test is not None:
             test_loss = closure(x, D_test, labels_test, backwards=False)
             score_dict["test_loss"] = test_loss
             score_dict["test_accuracy"] = accuracy(x, D_test, labels_test)
             score_dict["test_loss_log"] = np.log(test_loss)
-            # score_dict["test_accuracy_log"] = np.log(score_dict["test_accuracy"])
 
         score_list += [score_dict]
 
