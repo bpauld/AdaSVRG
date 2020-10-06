@@ -1,0 +1,20 @@
+{
+    "batch_size": 8,
+    "d": 20,
+    "dataset": "synthetic",
+    "false_ratio": 0.25,
+    "loss_func": "squared_hinge_loss",
+    "margin": 1e-06,
+    "max_epoch": 1,
+    "n_samples": 10000,
+    "opt": {
+        "adaptive_termination": false,
+        "init_step_size": 1,
+        "linesearch_option": 1,
+        "name": "svrg_ada",
+        "r": 0.125,
+        "reset": true
+    },
+    "regularization_factor": 0.0001,
+    "runs": 0
+}

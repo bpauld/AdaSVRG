@@ -54,7 +54,8 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
         raise ValueError('x0 must be a numpy array of size (d, )')
 
     num_grad_evals = 0
-    check_pt  = 0  
+    check_pt  = 0
+    step_size = init_step_size
 
     for k in range(max_epoch):
         t_start = time.time()
