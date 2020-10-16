@@ -26,9 +26,10 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
             init_step_size = 1, max_epoch=100, r=0, x0=None, verbose=True,
             linesearch_option = 1,
             adaptive_termination = False,
-            D_test=None, labels_test=None, reset = True, interval_size=10, threshold_at=1):
+            D_test=None, labels_test=None, reset=True, threshold_at=1, interval_size=10,
+            average_iterates=False):
     """
-        SVRG with fixed step size for solving finite-sum problems
+        SVRG-Ada for solving finite-sum problems
         Closure: a PyTorch-style closure returning the objective value and it's gradient.
         batch_size: the size of minibatches to use.
         D: the set of input vectors (usually X).
@@ -54,9 +55,8 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
         raise ValueError('x0 must be a numpy array of size (d, )')
 
     num_grad_evals = 0
-    check_pt  = 0
+    check_pt  = 0  
     step_size = init_step_size
-
     for k in range(max_epoch):
         t_start = time.time()
 
@@ -67,10 +67,14 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
         # initialize running sum of gradient norms
         if (k == 0) or (reset):
             Gk2 = 0
+            
+        if average_iterates:
+            running_average = 0
+            counter = 0
            
         if linesearch_option == 0:
-            step_size = init_step_size
-
+            step_size = init_step_size                       
+        
         elif linesearch_option == 1:
             if k == 0:
                 x_rand = np.random.normal(0, 1, d)
@@ -91,11 +95,11 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
                 if (L_hat < 1e-8):
                     step_size =  1e-4 # some small default step-size
                 else:
-                    step_size = np.linalg.norm(full_grad) / L_hat            
-            
+                    step_size = np.linalg.norm(full_grad) / L_hat
+               
         elif linesearch_option == 2 and (k ==  0):
             step_size = init_step_size
-                            
+                                      
         last_full_grad = full_grad
         last_x_tilde = x_tilde
 
@@ -154,16 +158,23 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
             if adaptive_termination == True:
                 if (i % interval_size == 0) and  i >= int(min(n,m)/2) :
                     check_pt = check_pt  + 1                                                            
-                    if check_pt > threshold_at:
+                    if check_pt > 1:
                         S = (Gk2 / i) / (prev_Gk2 / prev_i) 
-                        if S > 1:
+                        if S > threshold_at:
                             print('Breaking out of inner loop at iteration', i)
                             break
 
                     prev_Gk2 = Gk2
-                    prev_i = i         
+                    prev_i = i      
+            
             x -= (step_size / np.sqrt(Gk2)) * gk
             
+            if average_iterates and i > m/2: #allow for a burn-in phase
+                running_average += x
+                counter += 1
+                
+        if average_iterates and counter > 0: #just in case the batch size is so big that we don't average at all
+            x = 1/counter * running_average    
         t_end = time.time()
         time_epoch = t_end - t_start
         score_list[len(score_list) - 1]["time"] = time_epoch

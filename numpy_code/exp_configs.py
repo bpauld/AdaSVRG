@@ -119,32 +119,43 @@ for benchmark in benchmarks_list + benchmarks_interpolation_list:
 #======================= Setting up basic optimizers ===========================
 stepsizes = [1e-3, 1e-2, 1e-1]
 
+#svrg optimizers
 svrg_list = []
 for eta in stepsizes:
     svrg_list += [{'name':'svrg',
                   'r':0.,
                   'adaptive_termination':0,
                   'init_step_size':eta}]
-    
+
+#svrg-bb optimizers
 svrg_bb_list = []
 for eta in stepsizes:
     svrg_bb_list += [{'name':'svrg_bb',
                     "r":0.,
                     "init_step_size" : eta,
                     "adaptive_termination": 0}]
-    
+#svrg-ada optimizers   
 svrg_ada_list = [{'name':'svrg_ada',
                  'r':0.,
                  'init_step_size':1,
                  'linesearch_option':1,
                  'reset':True,
                  'adaptive_termination':False}]
+svrg_ada_list += [{'name':'svrg_ada',
+                 'r':0.,
+                 'init_step_size':1,
+                 'linesearch_option':1,
+                 'reset':True,
+                 'adaptive_termination':False,
+                 'average_iterates':True}]
 
+#hybrid sls svrg-ada optimizers
 sls_svrg_ada_list = [{'name':'sls_svrg_ada',      
                 "r" : 0., 
                 "adaptive_termination": 2}] 
 
 basic_opt_list = svrg_list + svrg_bb_list + svrg_ada_list + sls_svrg_ada_list
+#basic_opt_list = svrg_list
 
 #for benchmark in benchmarks_list:
  #   EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, basic_opt_list, batch_size=1)) 
@@ -187,6 +198,13 @@ for bs in batch_sizes:
                  "linesearch_option": 1,
                  "reset":  True,
                  "adaptive_termination":False}]
+    bs_opt_list += [{'name':'svrg_ada',
+                 'r':1/bs,
+                 'init_step_size':1,
+                 'linesearch_option':1,
+                 'reset':True,
+                 'adaptive_termination':False,
+                 'average_iterates':True}]
     for benchmark in benchmarks_list:
         EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, bs_opt_list, batch_size=bs)) 
         
