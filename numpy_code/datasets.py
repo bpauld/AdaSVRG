@@ -39,7 +39,7 @@ def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0,
         # load real dataset
         A = data[0].toarray()
 
-        if dataset_name in ['quantum', 'rcv1', 'protein', 'news']:
+        if dataset_name in ['quantum', 'protein', 'news']:
             y = data[1].toarray().ravel()
         else:
             y = data[1]
@@ -63,8 +63,12 @@ def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0,
       #  X_test = (X_test - np.mean(X_train, axis = 0))/ np.std(X_train, axis = 0)
 
     if is_kernelize == 1:
+        sigma_dict = {"mushrooms": 0.5,
+                      "w8a":20.0,
+                      "rcv1":0.25 ,
+                      "ijcnn":0.05}
         # Form kernel
-        A_train, A_test = kernelize(X_train, X_test, dataset_name, data_dir=data_dir)
+        A_train, A_test = kernelize(X_train, X_test, dataset_name, data_dir=data_dir, sigma=sigma_dict[dataset_name])
     else:
         A_train = X_train
         A_test = X_test
@@ -74,7 +78,7 @@ def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0,
     return A_train, y_train, A_test, y_test
 
 
-def kernelize(X, X_test, dataset_name, kernel_type=0, data_dir="./Data"):
+def kernelize(X, X_test, dataset_name, data_dir="./Data", sigma=1.0, kernel_type=0):
     n = X.shape[0]
 
     fname = data_dir + '/Kernel_' + str(n) + '_' + str(dataset_name) + '.p'
@@ -86,8 +90,8 @@ def kernelize(X, X_test, dataset_name, kernel_type=0, data_dir="./Data"):
 
     else:
         if kernel_type == 0:
-            X_kernel = RBF_kernel(X, X)
-            X_test_kernel = RBF_kernel(X_test, X)
+            X_kernel = RBF_kernel(X, X, sigma=sigma)
+            X_test_kernel = RBF_kernel(X_test, X, sigma=sigma)
             print('Formed the kernel matrix')
 
         pickle.dump((X_kernel, X_test_kernel), open(fname, "wb"))

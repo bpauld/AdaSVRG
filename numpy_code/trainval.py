@@ -89,7 +89,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 		else:
 			d = 0
 
-		X, y, X_test, y_test = data_load(data_dir, exp_dict["dataset"] , n, d, false_ratio, is_subsample, is_kernelize)
+		X, y, X_test, y_test = data_load(data_dir, exp_dict["dataset"] , n, d, false_ratio, is_subsample=is_subsample, is_kernelize=is_kernelize)
 		n = X.shape[0]
 	#define the regularized losses we will use
 	regularization_factor = exp_dict["regularization_factor"]

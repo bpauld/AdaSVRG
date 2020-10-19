@@ -109,10 +109,21 @@ def get_benchmark(benchmark, opt_list, batch_size = 1):
                 "batch_size":batch_size,
                 "max_epoch":[50],
                 "runs":RUNS}
+    
+    elif benchmark == "kernel_mushrooms":
+        return {"dataset": ["mushrooms"],
+               "is_kernelize":1,
+               "loss_func":LOSSES,
+               "opt":opt_list,
+               "regularization_factor":0.,
+               "batch_size":batch_size,
+               "max_epoch":max_epoch,
+               "runs":runs}
+
 
 EXP_GROUPS = {}
 benchmarks_list = ["synthetic", "mushrooms", "ijcnn", "a1a", "a2a", "w8a", "rcv1"]
-benchmarks_interpolation_list = ["syn_interpolation1", "syn_interpolation2", "syn_interpolation3"]
+benchmarks_interpolation_list = ["syn_interpolation1", "syn_interpolation2", "syn_interpolation3", "kernel_mushrooms"]
 for benchmark in benchmarks_list + benchmarks_interpolation_list:
     EXP_GROUPS["exp_%s" % benchmark] = []
 
@@ -254,4 +265,28 @@ for interval in intervals_list:
                              'interval_size':interval}]
                             
 for benchmark in benchmarks_list:
-    EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, svrg_ada_at_list, batch_size=batch_size)) 
+    EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, svrg_ada_at_list, batch_size=batch_size))
+
+    
+#======================== testing kernels =====================================
+batch_sizes = [32]
+for bs in batch_sizes:
+    bs_opt_list = []
+    bs_opt_list += [{'name':'sls',      
+                "init_step_size":  None,          
+                "adaptive_termination": 0,
+                "batch_size":bs}]
+    bs_opt_list += [{'name':'svrg_ada',
+                 'r':1/bs,
+                 'init_step_size':1,
+                 'linesearch_option':1,
+                 'reset':True,
+                 'adaptive_termination':False,
+                 'average_iterates':True}]
+    for eta in [1e-3, 1e-2, 1e-1, 1]:
+        bs_opt_list += [{'name':'sls',      
+                "init_step_size":  eta,          
+                "adaptive_termination": 0,
+                "batch_size":bs}]
+    for benchmark in ["kernel_mushrooms"]:
+        EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, bs_opt_list, batch_size=bs, runs=[0,1], max_epoch=20))
