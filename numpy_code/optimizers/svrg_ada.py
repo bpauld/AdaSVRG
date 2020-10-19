@@ -54,8 +54,7 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
     else:
         raise ValueError('x0 must be a numpy array of size (d, )')
 
-    num_grad_evals = 0
-    check_pt  = 0  
+    num_grad_evals = 0    
     step_size = init_step_size
     for k in range(max_epoch):
         t_start = time.time()
@@ -108,7 +107,7 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
                      (k, np.linalg.norm(full_grad))
             output += ', Func. value: %e' % loss
             output += ', Step size: %e' % step_size
-            output += ', Num gradient evaluations: %d' % num_grad_evals
+            output += ', Num gradient evaluations/n: %f' % (num_grad_evals / n)  
             print(output)        
         
         full_grad_norm = np.linalg.norm(full_grad)
@@ -133,6 +132,12 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
             score_dict["test_loss_log"] = np.log(test_loss)            
 
         score_list += [score_dict]
+
+        # for adaptive termination
+        if adaptive_termination == True:
+            at_mem = []
+            check_pt  = 0  
+            S_list = []
         
         # Create Minibatches:
         minibatches = make_minibatches(n, m, batch_size)
@@ -140,7 +145,7 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
             # get the minibatch for this iteration
             indices = minibatches[i]
             Di, labels_i = D[indices, :], labels[indices]
-            num_grad_evals = num_grad_evals + batch_size
+            num_grad_evals = num_grad_evals + 2 * batch_size
 
             # compute the gradients:
             loss_temp, x_grad = closure(x, Di, labels_i)
@@ -156,16 +161,29 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
                 num_grad_evals = num_grad_evals + batch_size * armijo_iter
                 
             if adaptive_termination == True:
-                if (i % interval_size == 0) and  i >= int(min(n,m)/2) :
+                if (i % interval_size == 0): # and i >= int(min(n,m)/2):
                     check_pt = check_pt  + 1                                                            
-                    if check_pt > 1:
-                        S = (Gk2 / i) / (prev_Gk2 / prev_i) 
-                        if S > threshold_at:
+                    if check_pt > 2:                                                                      
+                        a0 = at_mem[0][0]
+                        a1 = at_mem[1][0]
+
+                        b0 = at_mem[0][1]
+                        b1 = at_mem[1][1]
+
+                        slope = (b1 - b0) / (a1 - a0)
+                        bias =  b1 - slope * a1
+
+                        S = np.abs(slope * i + bias - Gk2) / Gk2
+                        S_list.append(S)                                                                  
+                        if S < threshold_at:
                             print('Breaking out of inner loop at iteration', i)
                             break
 
-                    prev_Gk2 = Gk2
-                    prev_i = i      
+                    if len(at_mem) < 2:
+                        at_mem.append([i, Gk2])
+                    else:
+                        at_mem[0] = at_mem[1]
+                        at_mem[1] = [i, Gk2]                    
             
             x -= (step_size / np.sqrt(Gk2)) * gk
             

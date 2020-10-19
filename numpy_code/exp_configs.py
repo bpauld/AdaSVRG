@@ -1,8 +1,8 @@
 from haven import haven_utils as hu
 import itertools 
 
-RUNS = [0,1,2,3,4]
-LOSSES = ["logistic_loss", "squared_loss", "squared_hinge_loss"]
+RUNS = [0]
+LOSSES = ["logistic_loss"] #, "squared_loss", "squared_hinge_loss"]
 def get_benchmark(benchmark, opt_list, batch_size = 1):
     if benchmark == "synthetic":
         return {"dataset":["synthetic"],
@@ -173,8 +173,8 @@ for eta in stepsizes:
                 "adaptive_termination": 0}]
 
 interpolation_opt_list = sls_opt_list + svrg_list + sls_svrg_ada_list
-for benchmark in benchmarks_interpolation_list:
-    EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, interpolation_opt_list, batch_size=1))
+# for benchmark in benchmarks_interpolation_list:
+#     EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, interpolation_opt_list, batch_size=1))
     
 
     
@@ -205,8 +205,8 @@ for bs in batch_sizes:
                  'reset':True,
                  'adaptive_termination':False,
                  'average_iterates':True}]
-    for benchmark in benchmarks_list:
-        EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, bs_opt_list, batch_size=bs)) 
+    # for benchmark in benchmarks_list:
+    #     EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, bs_opt_list, batch_size=bs)) 
         
 
         
@@ -228,4 +228,30 @@ for interval in intervals_list:
 
 #for benchmark in benchmarks_list:
  #   EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, svrg_ada_at_list, batch_size=1))        
-    
+
+
+#=========================== Debugging svrg-ada with adaptive termination ==========================
+intervals_list = [100]
+thresholds_list = [1e-3]
+svrg_ada_at_list = []
+batch_size  = 1
+for interval in intervals_list:
+    for threshold in thresholds_list:
+        svrg_ada_at_list += [{'name':'svrg_ada',
+                             'r':1,
+                             'adaptive_termination':False,
+                             'linesearch_option':1,
+                             'reset':True,
+                             'init_step_size':1}] 
+
+        svrg_ada_at_list += [{'name':'svrg_ada',
+                             'r':10,
+                             'adaptive_termination':True,
+                             'linesearch_option':1,
+                             'reset':True,
+                             'init_step_size':1,
+                             'threshold_at': threshold,
+                             'interval_size':interval}]
+                            
+for benchmark in benchmarks_list:
+    EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, svrg_ada_at_list, batch_size=batch_size)) 
