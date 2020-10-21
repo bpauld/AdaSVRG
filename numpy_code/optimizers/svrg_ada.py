@@ -25,7 +25,7 @@ def armijo_ls(closure, D, labels, x, loss, grad, p, init_step_size, c, beta):
 def svrg_ada(score_list, closure, batch_size, D, labels, 
             init_step_size = 1, max_epoch=100, r=0, x0=None, verbose=True,
             linesearch_option = 1,
-            adaptive_termination = False,
+            adaptive_termination = 0,
             D_test=None, labels_test=None, reset=True, threshold_at=1, interval_size=10,
             average_iterates=False):
     """
@@ -134,9 +134,13 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
         score_list += [score_dict]
 
         # for adaptive termination
-        if adaptive_termination == True:
+        if adaptive_termination == 1:
             at_mem = []
             check_pt  = 0  
+            S_list = []
+        if adaptive_termination == 2:
+            sum_vector = np.zeros(2)
+            sum_matrix = np.zeros((2,2))
             S_list = []
         
         # Create Minibatches:
@@ -160,7 +164,7 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
                 step_size, armijo_iter = armijo_ls(closure, Di, labels_i, x, loss_temp, x_grad, gk, reset_step_size, c, beta)
                 num_grad_evals = num_grad_evals + batch_size * armijo_iter
                 
-            if adaptive_termination == True:
+            if adaptive_termination == 1:
                 if (i % interval_size == 0): # and i >= int(min(n,m)/2):
                     check_pt = check_pt  + 1                                                            
                     if check_pt > 2:                                                                      
@@ -183,7 +187,25 @@ def svrg_ada(score_list, closure, batch_size, D, labels,
                         at_mem.append([i, Gk2])
                     else:
                         at_mem[0] = at_mem[1]
-                        at_mem[1] = [i, Gk2]                    
+                        at_mem[1] = [i, Gk2]   
+                        
+            if adaptive_termination == 2:
+                if (i % interval_size == 0):
+                    check_pt = check_pt  + 1
+                    if check_pt > 2:
+                        weight = np.linalg.lstsq(sum_matrix, sum_vector, rcond=None)
+                        slope = weight[0][0]
+                        bias = weight[0][1]
+                        S = np.abs(slope * i + bias - Gk2) / Gk2
+                        S_list.append(S) 
+                        if S < threshold_at:
+                            print('Breaking out of inner loop at iteration', i)  
+                            break                        
+                    a = np.zeros(2)
+                    a[0] = i
+                    a[1] = 1 #add bias term
+                    sum_vector += Gk2*a
+                    sum_matrix += np.outer(a, np.transpose(a))
             
             x -= (step_size / np.sqrt(Gk2)) * gk
             

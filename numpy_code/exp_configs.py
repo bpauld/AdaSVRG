@@ -250,11 +250,16 @@ for interval in intervals_list:
     for threshold in thresholds_list:
         svrg_ada_at_list += [{'name':'svrg_ada',
                              'r':1,
-                             'adaptive_termination':False,
+                             'adaptive_termination':1,
                              'linesearch_option':1,
                              'reset':True,
-                             'init_step_size':1}] 
-
+                             'init_step_size':1}]
+        svrg_ada_at_list += [{'name':'svrg_ada',
+                             'r':1,
+                             'adaptive_termination':2,
+                             'linesearch_option':1,
+                             'reset':True,
+                             'init_step_size':1}]
         svrg_ada_at_list += [{'name':'svrg_ada',
                              'r':10,
                              'adaptive_termination':True,
