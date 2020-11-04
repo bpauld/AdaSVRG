@@ -10,6 +10,7 @@ from optimizers.svrg_ada import *
 from optimizers.svrg_cb import *
 from optimizers.sarah import *
 from optimizers.svrg_ada_at import *
+from optimizers.svrg_ada_diag import *
 from optimizers.sls import *
 from optimizers.sls_svrg_ada import *
 
@@ -172,6 +173,26 @@ def trainval(exp_dict, savedir_base, reset=False):
                            linesearch_option = linesearch_option,
                            adaptive_termination = adaptive_termination,
                            reset = reset, D_test=X_test, labels_test=y_test, threshold_at=threshold_at, interval_size=interval_size, average_iterates=average_iterates)
+        
+        
+	elif opt_dict["name"] == 'svrg_ada_diag':
+		init_step_size = opt_dict["init_step_size"]
+		r = opt_dict["r"]		
+		linesearch_option = opt_dict["linesearch_option"]
+		reset = opt_dict["reset"]
+		adaptive_termination = opt_dict["adaptive_termination"]
+		if "epsilon" in opt_dict.keys():
+			epsilon = opt_dict["epsilon"]
+		else:
+			epsilon = 1e-8      
+
+		score_list = svrg_ada_diag(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
+						   max_epoch=exp_dict["max_epoch"],                                               
+                           D=X, labels=y, 
+                           r = r, init_step_size=init_step_size, 
+                           linesearch_option = linesearch_option,
+                           adaptive_termination = adaptive_termination,
+                           reset = reset, D_test=X_test, labels_test=y_test, epsilon=epsilon)
 
 	elif opt_dict["name"] == 'svrg_cb':
 		r = opt_dict["r"]

@@ -295,3 +295,30 @@ for bs in batch_sizes:
                 "batch_size":bs}]
     for benchmark in ["kernel_mushrooms"]:
         EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, bs_opt_list, batch_size=bs, runs=[0,1], max_epoch=20))
+        
+        
+        
+#================================== diagonal experiments ==================================================
+svrg_ada_diag_list = []
+for benchmark in benchmarks_list:
+        EXP_GROUPS['exp_%s_diag' % benchmark] = []
+
+for bs in [1]:
+    svrg_ada_diag_list += [{'name':'svrg_ada',
+                 'r':1/bs,
+                 'init_step_size':1,
+                 'linesearch_option':1,
+                 'reset':True,
+                 'adaptive_termination':0}]
+    for eps in [1e-8]:               
+        svrg_ada_diag_list += [{'name':'svrg_ada_diag',
+                       'r':1/bs,
+                 'init_step_size':1,
+                 'linesearch_option':1,
+                 'reset':True,
+                 'adaptive_termination':0,
+                 'average_iterates':False,
+                  'epsilon':eps}]
+        
+    for benchmark in benchmarks_list:
+        EXP_GROUPS['exp_%s_diag' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, svrg_ada_diag_list, batch_size=bs, max_epoch=[40], runs=[0]))
