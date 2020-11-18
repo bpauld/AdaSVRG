@@ -184,7 +184,11 @@ def trainval(exp_dict, savedir_base, reset=False):
 		if "epsilon" in opt_dict.keys():
 			epsilon = opt_dict["epsilon"]
 		else:
-			epsilon = 1e-8      
+			epsilon = 1e-8
+		if "scaling_by_d" in opt_dict.keys():
+			scaling_by_d = opt_dict["scaling_by_d"]
+		else:
+			scaling_by_d = 0    
 
 		score_list = svrg_ada_diag(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               

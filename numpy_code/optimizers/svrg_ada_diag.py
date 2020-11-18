@@ -10,7 +10,7 @@ def svrg_ada_diag(score_list, closure, batch_size, D, labels,
             linesearch_option = 1,
             adaptive_termination = False,
             D_test=None, labels_test=None, reset=True, threshold_at=1, interval_ratio=0, interval_size=10,
-            average_iterates=False, average_start=0, nb_check_pt=2, epsilon=1e-8):
+            average_iterates=False, average_start=0, nb_check_pt=2, epsilon=1e-8, scaling_by_d=0):
     """
         SVRG-Ada for solving finite-sum problems
         Closure: a PyTorch-style closure returning the objective value and it's gradient.
@@ -82,6 +82,83 @@ def svrg_ada_diag(score_list, closure, batch_size, D, labels,
                     step_size =  1e-4 # some small default step-size
                 else:
                     step_size = np.linalg.norm(full_grad) / L_hat
+                    
+        elif linesearch_option == 2:
+            if k == 0:
+                x_rand = np.random.normal(1, 1, d)
+                loss_rand , full_grad_rand = closure(x_rand, D, labels)
+                num_grad_evals = num_grad_evals + n
+                L_hat = np.abs(full_grad - full_grad_rand) / np.abs(x_tilde - x_rand)
+                max_L_hat = L_hat
+                L_hat_norm = np.linalg.norm(full_grad - full_grad_rand) / np.linalg.norm(x_tilde - x_rand)
+                
+                if (L_hat_norm < 1e-8):
+                    step_size = 1e-4
+                else:
+                    step_size = np.abs(full_grad) / L_hat
+                       
+            else:
+                L_hat = np.abs(full_grad - full_grad_rand) / np.abs(x_tilde - x_rand)
+                L_hat_norm = np.linalg.norm(full_grad - full_grad_rand) / np.linalg.norm(x_tilde - x_rand)
+                max_L_hat = np.maximum(L_hat, max_L_hat)
+                
+                if (L_hat_norm < 1e-8):
+                    step_size = 1e-4
+                else:
+                    step_size = np.abs(full_grad) / L_hat
+                    
+        elif linesearch_option == 14:
+            if k == 0:
+                x_rand = x + np.random.normal(0, 0.01, d)
+                loss_rand , full_grad_rand = closure(x_rand, D, labels)
+                num_grad_evals = num_grad_evals + n
+                L_hat = np.linalg.norm(full_grad - full_grad_rand) / np.linalg.norm(x_tilde - x_rand)
+                max_L_hat = L_hat
+
+                # to prevent the step-size from blowing up. 
+                if (max_L_hat < 1e-8):
+                    step_size = 1e-4
+                else:
+                    step_size = np.linalg.norm(full_grad) / L_hat
+                       
+            else:
+                L_hat = np.linalg.norm(full_grad - last_full_grad) / np.linalg.norm(x_tilde - last_x_tilde)
+                if L_hat > max_L_hat:
+                    max_L_hat = L_hat
+
+                # to prevent the step-size from blowing up. 
+                if (max_L_hat < 1e-8):
+                    step_size =  1e-4 # some small default step-size
+                else:
+                    step_size = np.linalg.norm(full_grad) / max_L_hat
+                    
+        elif linesearch_option == 15:
+            if k == 0:
+                x_rand = x + np.random.normal(1, 1, d)
+                loss_rand , full_grad_rand = closure(x_rand, D, labels)
+                num_grad_evals = num_grad_evals + n
+                L_hat = np.linalg.norm(full_grad - full_grad_rand) / np.linalg.norm(x_tilde - x_rand)
+                max_L_hat = L_hat
+
+                # to prevent the step-size from blowing up. 
+                if (max_L_hat < 1e-8):
+                    step_size = 1e-4
+                else:
+                    step_size = np.linalg.norm(full_grad) / L_hat
+                       
+            else:
+                L_hat = np.linalg.norm(full_grad - last_full_grad) / np.linalg.norm(x_tilde - last_x_tilde)
+                if L_hat > max_L_hat:
+                    max_L_hat = L_hat
+
+                # to prevent the step-size from blowing up. 
+                if (max_L_hat < 1e-8):
+                    step_size =  1e-4 # some small default step-size
+                else:
+                    step_size = np.linalg.norm(full_grad) / max_L_hat
+        
+        
+        #print(step_size)
                                       
         last_full_grad = full_grad
         last_x_tilde = x_tilde
@@ -132,8 +209,15 @@ def svrg_ada_diag(score_list, closure, batch_size, D, labels,
             gk = x_grad - x_tilde_grad + full_grad
             Gk2 = Gk2 + np.multiply(gk,gk)
             Gk2_scalar = Gk2_scalar + (np.linalg.norm(gk) ** 2)
+            #print(1/np.sqrt(Gk2))
+            #print(1/Gk2_scalar)
             
-            x -= step_size * np.multiply(1/(np.sqrt(Gk2)), gk)
+            if scaling_by_d == 1:
+                x -= step_size * np.multiply(1/(d*np.sqrt(Gk2)), gk)
+            elif scaling_by_d == 2:
+                x -= step_size * np.multiply(1/(np.sqrt(d*Gk2)), gk)
+            else:
+                x -= step_size * np.multiply(1/(np.sqrt(Gk2)), gk)
                 
         if average_iterates and counter > 0: #just in case the batch size is so big that we don't average at all
             x = 1/counter * running_average    
@@ -142,4 +226,6 @@ def svrg_ada_diag(score_list, closure, batch_size, D, labels,
         score_list[len(score_list) - 1]["time"] = time_epoch
 
     return score_list
+            
+
             

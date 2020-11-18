@@ -52,6 +52,11 @@ def squared_hinge_loss(w, X, y):
     '''Squared Hinge Loss '''
     return torch.mean((torch.max( torch.zeros(n,dtype=torch.double) , torch.ones(n,dtype=torch.double) - torch.mul(y, torch.matmul(X, w))))**2 )
 
+def huber_loss(w, X, y, delta=1):
+    diff = torch.abs(torch.matmul(X, w) - y)
+    #print(torch.where(diff <= delta, 0.5 * diff**2, delta * diff - 0.5 * delta**2))
+    return torch.mean(torch.where(diff <= delta, 0.5 * diff**2, delta * diff - 0.5 * delta**2))
+
 def squared_loss(w, X, y):
     n,d = X.shape
     '''Squared Loss'''

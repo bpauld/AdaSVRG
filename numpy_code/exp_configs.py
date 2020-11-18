@@ -3,10 +3,15 @@ import itertools
 
 RUNS = [0]
 LOSSES = ["logistic_loss"] #, "squared_loss", "squared_hinge_loss"]
-def get_benchmark(benchmark, opt_list, batch_size = 1):
+def get_benchmark(benchmark,
+                  opt_list,
+                  batch_size = 1,
+                  runs = [0,1,2,3,4],
+                  max_epoch=[50],
+                  losses=["logistic_loss", "squared_loss", "huber_loss"]):
     if benchmark == "synthetic":
         return {"dataset":["synthetic"],
-                "loss_func": LOSSES,
+                "loss_func": losses,
                 "opt": opt_list,
                 "regularization_factor":1e-4,
                 'margin':[1e-6],
@@ -14,66 +19,66 @@ def get_benchmark(benchmark, opt_list, batch_size = 1):
                 "n_samples": [10000],
                 "d": [20],
                 "batch_size":[batch_size],
-                "max_epoch":[50],
-                "runs":RUNS}
+                "max_epoch":max_epoch,
+                "runs":runs}
     
     elif benchmark == "mushrooms":
         return {"dataset":["mushrooms"],
-                "loss_func": LOSSES,
+                "loss_func": losses,
                 "opt": opt_list,
                 "regularization_factor":1./8000,
                 "batch_size":batch_size,
-                "max_epoch":[50],
-                "runs":RUNS}
+                "max_epoch":max_epoch,
+                "runs":runs}
     
     elif benchmark == "ijcnn":
         return {"dataset":["ijcnn"],
-                "loss_func": LOSSES,
+                "loss_func": losses,
                 "opt": opt_list,
                 "regularization_factor":1./35000,
                 "batch_size":batch_size,
-                "max_epoch":[50],
-                "runs":RUNS}
+                "max_epoch":max_epoch,
+                "runs":runs}
     
     elif benchmark == "a1a":
         return {"dataset":["a1a"],
-                "loss_func": LOSSES,
+                "loss_func": losses,
                 "opt": opt_list,
                 "regularization_factor":1./1600,
                 "batch_size":batch_size,
-                "max_epoch":[50],
-                "runs":RUNS}
+                "max_epoch":max_epoch,
+                "runs":runs}
     
     elif benchmark == "a2a":
         return {"dataset":["a2a"],
-                "loss_func": LOSSES,
+                "loss_func": losses,
                 "opt": opt_list,
                 "regularization_factor":1./2300,
                 "batch_size":batch_size,
-                "max_epoch":[50],
-                "runs":RUNS}
+                "max_epoch":max_epoch,
+                "runs":runs}
     
     elif benchmark == "w8a":
         return {"dataset":["w8a"],
-                "loss_func": LOSSES,
+                "loss_func": losses,
                 "opt": opt_list,
                 "regularization_factor":1./50000,
                 "batch_size":batch_size,
-                "max_epoch":[50],
-                "runs":RUNS}
+                "max_epoch":max_epoch,
+                "runs":runs}
     
     elif benchmark == "rcv1":
         return {"dataset":["rcv1"],
-                "loss_func": LOSSES,
+                "loss_func": losses,
                 "opt": opt_list,
                 "regularization_factor":1./20000,
                 "batch_size":batch_size,
-                "max_epoch":[50],
-                "runs":RUNS}
+                "max_epoch":max_epoch,
+                "runs":runs}
     
     elif benchmark == "syn_interpolation1":
         return {"dataset":["synthetic"],
-                "loss_func": LOSSES,
+                "loss_func": losses,
                 "opt": opt_list,
                 "regularization_factor":0.,
                 "margin":[0.1],
@@ -81,12 +86,12 @@ def get_benchmark(benchmark, opt_list, batch_size = 1):
                 "n_samples": [10000],
                 "d": [20],
                 "batch_size":batch_size,
-                "max_epoch":[50],
-                "runs":RUNS}
+                "max_epoch":max_epoch,
+                "runs":runs}
     
     elif benchmark == "syn_interpolation2":
         return {"dataset":["synthetic"],
-                "loss_func": LOSSES,
+                "loss_func": losses,
                 "opt": opt_list,
                 "regularization_factor":0.,
                 "margin":[0.01],
@@ -94,12 +99,12 @@ def get_benchmark(benchmark, opt_list, batch_size = 1):
                 "n_samples": [10000],
                 "d": [20],
                 "batch_size":batch_size,
-                "max_epoch":[50],
-                "runs":RUNS}
+                "max_epoch":max_epoch,
+                "runs":runs}
     
     elif benchmark == "syn_interpolation3":
         return {"dataset":["synthetic"],
-                "loss_func": LOSSES,
+                "loss_func": losses,
                 "opt": opt_list,
                 "regularization_factor":0.,
                 "margin":[0.001],
@@ -107,13 +112,13 @@ def get_benchmark(benchmark, opt_list, batch_size = 1):
                 "n_samples": [10000],
                 "d": [20],
                 "batch_size":batch_size,
-                "max_epoch":[50],
-                "runs":RUNS}
+                "max_epoch":max_epoch,
+                "runs":runs}
     
     elif benchmark == "kernel_mushrooms":
         return {"dataset": ["mushrooms"],
                "is_kernelize":1,
-               "loss_func":LOSSES,
+               "loss_func":losses,
                "opt":opt_list,
                "regularization_factor":0.,
                "batch_size":batch_size,
@@ -304,21 +309,27 @@ for benchmark in benchmarks_list:
         EXP_GROUPS['exp_%s_diag' % benchmark] = []
 
 for bs in [1]:
-    svrg_ada_diag_list += [{'name':'svrg_ada',
+    svrg_ada_diag_list = []
+    if True:    
+        svrg_ada_diag_list += [{'name':'svrg_ada',
                  'r':1/bs,
                  'init_step_size':1,
-                 'linesearch_option':1,
+                 'linesearch_option':14,
                  'reset':True,
-                 'adaptive_termination':0}]
-    for eps in [1e-8]:               
-        svrg_ada_diag_list += [{'name':'svrg_ada_diag',
+                 'adaptive_termination':False}]
+    for ls in [2, 14]:
+        for eps in [1e-10]:
+            for scale in [0, 1 , 2]:
+                svrg_ada_diag_list += [{'name':'svrg_ada_diag',
                        'r':1/bs,
                  'init_step_size':1,
-                 'linesearch_option':1,
+                 'linesearch_option':ls,
                  'reset':True,
                  'adaptive_termination':0,
                  'average_iterates':False,
+                 'scaling_by_d':scale,
                   'epsilon':eps}]
         
     for benchmark in benchmarks_list:
-        EXP_GROUPS['exp_%s_diag' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, svrg_ada_diag_list, batch_size=bs, max_epoch=[40], runs=[0]))
+        EXP_GROUPS['exp_%s_diag' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, svrg_ada_diag_list, batch_size=bs, max_epoch=[40], runs=[0, 1], losses = ['logistic_loss', 'squared_loss', 'huber_loss']))
+
