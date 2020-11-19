@@ -196,7 +196,7 @@ def trainval(exp_dict, savedir_base, reset=False):
                            r = r, init_step_size=init_step_size, 
                            linesearch_option = linesearch_option,
                            adaptive_termination = adaptive_termination,
-                           reset = reset, D_test=X_test, labels_test=y_test, epsilon=epsilon)
+                           reset = reset, D_test=X_test, labels_test=y_test, epsilon=epsilon, scaling_by_d=scaling_by_d)
 
 	elif opt_dict["name"] == 'svrg_cb':
 		r = opt_dict["r"]
