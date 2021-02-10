@@ -7,6 +7,8 @@ import os
 import itertools
 import numpy as np
 import tqdm
+import shutil
+from shutil import copyfile
 
 # =======================================
 # haven
@@ -15,7 +17,6 @@ from haven import haven_results as hr
 # from haven import haven_dropbox as hd
 from haven import haven_utils as hu
 
-import os
 import pylab as plt 
 import pandas as pd 
 import numpy as np
@@ -112,3 +113,79 @@ def compute_pflug_statistic(term1, term2, t, x, g, eta):
     term2 = 1.0/t * ((t - 1) * term2 + (eta**2/2) * np.dot(g, g))
 
     return term1, term2
+
+def compute_pflug_statistic2(term1, term2, t, x, g, eta):
+
+    term1 = 1.0/t * ((t - 1) * term1 + np.dot(x,g))
+    term2 = 1.0/t * ((t - 1) * term2 + (eta/2) * np.dot(g, g))
+
+    return term1, term2
+
+def compute_batch_mean_variance_estimator(delta_list):
+    N = len(delta_list)
+    p = int(np.sqrt(N))
+    q = int(np.sqrt(N))
+    mu_N = np.mean(delta_list)
+    sigma_square = 0
+    for j in range(p):
+        mu_j = np.mean(delta_list[j*q:(j+1)*q])
+        sigma_square += (mu_j - mu_N)**2
+    return q / (p-1) * sigma_square
+
+def pad_score_list(data, max_epoch, padding = "last"):
+    data_copy = copy.deepcopy(data)
+    list_len = len(data_copy)
+    if list_len == max_epoch:
+        return data
+    else:
+        if data[list_len - 1]['grad_norm'] < 1e-13:
+            data_copy[list_len - 1]['grad_norm'] = 1e-13
+        if data[list_len - 1]['grad_norm'] > 1e-7 or np.isnan(data[list_len - 1]['grad_norm']): #this means you diverged
+            padding = "last"
+        if padding == "last":
+            padding = data_copy[list_len - 1]['grad_norm']
+        #get average n_grad_evals to pad the dict with
+        #don't count epoch 0 because counting is different
+        if list_len > 1:
+            avg_increment_n_grad_evals = (data[list_len-1]['n_grad_evals'] - data[0]['n_grad_evals'])/ (list_len - 1)
+        else:
+            #if you are in this case, then what is going on is that you diverged right away
+            avg_increment_n_grad_evals = 2*data[0]['n_grad_evals']
+        n_grad_evals_end = data[list_len - 1]['n_grad_evals']
+        if "n_grad_evals_normalized" in data[list_len - 1].keys():
+            n_grad_evals_normalized_end = data[list_len - 1]['n_grad_evals_normalized']
+            number_data = n_grad_evals_end / n_grad_evals_normalized_end
+        nb_increments_to_add = 1
+        for i in range(list_len+1, max_epoch):
+            if "n_grad_evals_normalized" in data[list_len - 1].keys():
+                dict_to_append = {'epoch': i,
+                              'n_grad_evals': n_grad_evals_end + nb_increments_to_add * avg_increment_n_grad_evals,
+                              'n_grad_evals_normalized': (n_grad_evals_end + nb_increments_to_add * avg_increment_n_grad_evals)/number_data,
+                              'grad_norm':padding}
+                nb_increments_to_add += 1
+                data_copy.append(dict_to_append)
+            else:
+                dict_to_append = {'epoch': i,
+                              'n_grad_evals': n_grad_evals_end + nb_increments_to_add * avg_increment_n_grad_evals,
+                              'grad_norm':padding}
+                nb_increments_to_add += 1
+                data_copy.append(dict_to_append)
+        return data_copy
+
+def pad_all(save_dir, target_dir, max_epoch=50, padding="last"):
+    #os.makedirs('target_dir')
+    for subdir, dirs, files in os.walk(save_dir):
+        if not os.path.exists(subdir.replace(save_dir, target_dir)):
+            os.makedirs(subdir.replace(save_dir, target_dir))
+        for file in files:
+            if file == "score_list.pkl":
+                with open(os.path.join(subdir, file), 'rb') as f:
+                    data = pickle.load(f)
+                    new_data = pad_score_list(data, max_epoch=max_epoch, padding=padding)
+                    target_file = os.path.join(subdir.replace(save_dir, target_dir), file)
+                    with open(target_file, "wb") as fout:
+                        pickle.dump(new_data, fout)
+            else:
+                copyfile(os.path.join(subdir, file), os.path.join(subdir.replace(save_dir, target_dir), file))
+                
+    

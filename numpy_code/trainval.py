@@ -6,13 +6,12 @@ from utils import *
 
 from optimizers.svrg import *
 from optimizers.svrg_bb import *
-from optimizers.svrg_ada import *
-from optimizers.svrg_cb import *
+from optimizers.adasvrg import *
 from optimizers.sarah import *
-from optimizers.svrg_ada_at import *
-from optimizers.svrg_ada_diag import *
-from optimizers.sls import *
-from optimizers.sls_svrg_ada import *
+from optimizers.sgd import *
+from optimizers.adagrad import *
+from optimizers.adagrad_adasvrg import *
+from optimizers.svrg_loopless import *
 
 import argparse
 import exp_configs
@@ -72,13 +71,22 @@ def trainval(exp_dict, savedir_base, reset=False):
 		false_ratio = 0		
 	else:
 		false_ratio = exp_dict["false_ratio"]
+        
+	if "standardize" not in exp_dict.keys():		
+		standardize = False		
+	else:
+		standardize = exp_dict["standardize"]
+	if "remove_strong_convexity" not in exp_dict.keys():		
+		remove_strong_convexity = False		
+	else:
+		remove_strong_convexity = exp_dict["remove_strong_convexity"]
 	
     # load the dataset
 	if exp_dict["dataset"] == "synthetic":				
 	    n, d = exp_dict["n_samples"], exp_dict["d"]
 	    false_ratio = exp_dict["false_ratio"]	   
 	    margin = exp_dict["margin"]	    
-	    X, y, X_test, y_test = data_load(data_dir, exp_dict["dataset"],n, d, margin, false_ratio)
+	    X, y, X_test, y_test = data_load(data_dir, exp_dict["dataset"],n, d, margin, false_ratio, standardize=standardize, remove_strong_convexity=remove_strong_convexity)
 	else:
 		if is_subsample == 1:
 			n = subsampled_n
@@ -90,7 +98,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 		else:
 			d = 0
 
-		X, y, X_test, y_test = data_load(data_dir, exp_dict["dataset"] , n, d, false_ratio, is_subsample=is_subsample, is_kernelize=is_kernelize)
+		X, y, X_test, y_test = data_load(data_dir, exp_dict["dataset"] , n, d, false_ratio, is_subsample=is_subsample, is_kernelize=is_kernelize, standardize=standardize, remove_strong_convexity=remove_strong_convexity)
 		n = X.shape[0]
 	#define the regularized losses we will use
 	regularization_factor = exp_dict["regularization_factor"]
@@ -100,6 +108,8 @@ def trainval(exp_dict, savedir_base, reset=False):
 		closure = make_closure(squared_hinge_loss, regularization_factor)
 	elif exp_dict["loss_func"] == "squared_loss":
 		closure = make_closure(squared_loss, regularization_factor)
+	elif exp_dict["loss_func"] == "huber_loss":
+		closure = make_closure(huber_loss, regularization_factor)
 	else:
 		print("Not a valid loss")
 
@@ -118,145 +128,131 @@ def trainval(exp_dict, savedir_base, reset=False):
 
 	opt_dict = exp_dict["opt"]
 
-	if opt_dict["name"] in ['svrg']:
+	if opt_dict["name"] in ['SVRG']:
 	    init_step_size = opt_dict["init_step_size"]
 	    r = opt_dict["r"]
-	    adaptive_termination = opt_dict["adaptive_termination"]
-	    if "interval_size" in opt_dict.keys():
-		    interval_size = opt_dict["interval_size"]
-	    else:
-		    interval_size=10
-	    if "threshold_at" in opt_dict.keys():
-		    threshold_at = opt_dit["threshold_at"]
-	    else:
-		    threshold_at = 1
 
-	    score_list = svrg(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
+	    score_list = SVRG(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               
                            D=X, labels=y,
-                           init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination, D_test=X_test, labels_test=y_test, interval_size=interval_size, threshold_at=threshold_at)
+                           init_step_size=init_step_size, r=r, D_test=X_test, labels_test=y_test)
+        
+	elif opt_dict["name"] in ['SARAH']:
+	    init_step_size = opt_dict["init_step_size"]
+	    r = opt_dict["r"]
+
+	    score_list = SARAH(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
+						   max_epoch=exp_dict["max_epoch"],                                               
+                           D=X, labels=y,
+                           init_step_size=init_step_size, r=r, D_test=X_test, labels_test=y_test)
+        
+	elif opt_dict["name"] in ['SVRG_Loopless']:
+	    init_step_size = opt_dict["init_step_size"]
+	    r = opt_dict["r"]
+
+	    score_list = SVRG_Loopless(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
+						   max_epoch=exp_dict["max_epoch"],                                               
+                           D=X, labels=y,
+                           init_step_size=init_step_size, r=r, D_test=X_test, labels_test=y_test)
 
 
-	elif opt_dict["name"] in ['svrg_bb']:		
+	elif opt_dict["name"] in ['SVRG_BB']:		
 
 		init_step_size = opt_dict["init_step_size"]
 		r = opt_dict["r"]
-		adaptive_termination = opt_dict["adaptive_termination"]
-		score_list = svrg_bb(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
+		score_list = SVRG_BB(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               
                            D=X, labels=y,
-                           init_step_size=init_step_size, r=r, adaptive_termination= adaptive_termination, D_test=X_test, labels_test=y_test)
+                           init_step_size=init_step_size, r=r, D_test=X_test, labels_test=y_test)
 
-	elif opt_dict["name"] == 'svrg_ada':
+	elif opt_dict["name"] == 'AdaSVRG':
 		init_step_size = opt_dict["init_step_size"]
 		r = opt_dict["r"]		
 		linesearch_option = opt_dict["linesearch_option"]
-		reset = opt_dict["reset"]
 		adaptive_termination = opt_dict["adaptive_termination"]
-		if "interval_size" in opt_dict.keys():
-			interval_size = opt_dict["interval_size"]
-		else:
-			interval_size=10
 		if "threshold_at" in opt_dict.keys():
-			threshold_at = opt_dit["threshold_at"]
+			threshold_at = opt_dict["threshold_at"]
 		else:
-			threshold_at = 1
-		if "average_iterates" in opt_dict.keys():
-			average_iterates = opt_dict["average_iterates"]
-		else:
-			average_iterates = False
+			threshold_at = 1           
 
-		score_list = svrg_ada(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
+		score_list = AdaSVRG(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
 						   max_epoch=exp_dict["max_epoch"],                                               
                            D=X, labels=y, 
                            r = r, init_step_size=init_step_size, 
                            linesearch_option = linesearch_option,
                            adaptive_termination = adaptive_termination,
-                           reset = reset, D_test=X_test, labels_test=y_test, threshold_at=threshold_at, interval_size=interval_size, average_iterates=average_iterates)
-        
-        
-	elif opt_dict["name"] == 'svrg_ada_diag':
-		init_step_size = opt_dict["init_step_size"]
-		r = opt_dict["r"]		
-		linesearch_option = opt_dict["linesearch_option"]
-		reset = opt_dict["reset"]
-		adaptive_termination = opt_dict["adaptive_termination"]
-		if "epsilon" in opt_dict.keys():
-			epsilon = opt_dict["epsilon"]
-		else:
-			epsilon = 1e-8
-		if "scaling_by_d" in opt_dict.keys():
-			scaling_by_d = opt_dict["scaling_by_d"]
-		else:
-			scaling_by_d = 0    
-
-		score_list = svrg_ada_diag(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
-						   max_epoch=exp_dict["max_epoch"],                                               
-                           D=X, labels=y, 
-                           r = r, init_step_size=init_step_size, 
-                           linesearch_option = linesearch_option,
-                           adaptive_termination = adaptive_termination,
-                           reset = reset, D_test=X_test, labels_test=y_test, epsilon=epsilon, scaling_by_d=scaling_by_d)
-
-	elif opt_dict["name"] == 'svrg_cb':
-		r = opt_dict["r"]
-		adaptive_termination = opt_dict["adaptive_termination"]
-		reset = opt_dict["reset"]
-
-		score_list = svrg_cb(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
-						   max_epoch=exp_dict["max_epoch"],                                               
-                           D=X, labels=y, 
-                           r = r,                            
-                           adaptive_termination= adaptive_termination,
-                           reset = reset, D_test = X_test, labels_test=y_test)		
+                           D_test=X_test, labels_test=y_test, threshold_at=threshold_at)      
 
 
-	elif opt_dict["name"] == 'sarah':
-		r = opt_dict["r"]
-		init_step_size = opt_dict["init_step_size"]
-		score_list = sarah(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
-						   max_epoch=exp_dict["max_epoch"],                                               
-                           D=X, labels=y, 
-                           r = r,   init_step_size = init_step_size,                          
-                           D_test = X_test, labels_test=y_test)	
-
-	elif opt_dict["name"] == 'svrg_ada_at':
-		init_step_size = opt_dict["init_step_size"]
-		r = opt_dict["r"]		
-		linesearch_option = opt_dict["linesearch_option"]
-		adaptive_termination = opt_dict["adaptive_termination"]
-		reset = opt_dict["reset"]
-
-		score_list = svrg_ada_at(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
-						   max_epoch=exp_dict["max_epoch"],                                               
-                           D=X, labels=y, 
-                           r = r, init_step_size=init_step_size, 
-                           linesearch_option = linesearch_option, 
-						   adaptive_termination = adaptive_termination,                          
-                           reset = reset, D_test=X_test, labels_test=y_test)	
-
-	elif opt_dict["name"] == 'sls':		
-		adaptive_termination = opt_dict["adaptive_termination"]		
+	elif opt_dict["name"] == "SGD":		
 		init_step_size = opt_dict["init_step_size"]	
-		score_list = sls(score_list, closure = closure, batch_size=exp_dict["batch_size"], 
+		score_list = SGD(score_list, closure = closure, batch_size=exp_dict["batch_size"], 
 						max_epoch=exp_dict["max_epoch"], 
 						init_step_size=init_step_size, 
 						D = X, labels = y, 						
          				adaptive_termination = adaptive_termination,  
 						D_test=X_test, labels_test=y_test)[0]
+        
+	elif opt_dict["name"] == 'AdaGrad':		
+		init_step_size = opt_dict["init_step_size"]	
+		linesearch_option = opt_dict["linesearch_option"]
+		if "c" in opt_dict.keys():
+			c = opt_dict["c"]
+		else:
+			c = 0.5
+		if "beta" in opt_dict.keys():
+			beta = opt_dict["beta"]
+		else:
+			beta=0.9
+		if "adaptive_termination" in opt_dict.keys():
+			adaptive_termination = opt_dict["adaptive_termination"]
+		else:
+			adaptive_termination=0
+		if "threshold_at" in opt_dict.keys():
+			threshold_at = opt_dict["threshold_at"]
+		else:
+			threshold_at=0.5
+            
+		score_list = AdaGrad(score_list, closure = closure, batch_size=exp_dict["batch_size"], 
+						max_epoch=exp_dict["max_epoch"], 
+						init_step_size=init_step_size, 
+						linesearch_option=linesearch_option, adaptive_termination=adaptive_termination,
+						c=c, threshold_at=threshold_at,
+						beta=beta,
+						D = X, labels = y, 						 
+						D_test=X_test, labels_test=y_test)[0]
 
-	elif opt_dict["name"] == 'sls_svrg_ada':		
-		adaptive_termination = opt_dict["adaptive_termination"]			
+        
+	elif opt_dict["name"] == 'AdaGrad_AdaSVRG':		
+		init_step_size = opt_dict["init_step_size"]			
 		r = opt_dict["r"]		
-		score_list = sls_svrg_ada(score_list, closure = closure, 
+		if "threshold_at" in opt_dict.keys():
+			threshold_at = opt_dict["threshold_at"]
+		else:
+			threshold_at = 0.5
+		if "max_epoch_sgd" in opt_dict.keys():
+			max_epoch_sgd = opt_dict["max_epoch_sgd"]
+		else:
+			max_epoch_sgd = 10
+		if "adaptive_termination" in opt_dict.keys():
+			adaptive_termination = opt_dict["adaptive_termination"]
+		else:
+			adaptive_termination=0  
+		if "linesearch_option_sgd_ada" in opt_dict.keys():
+			linesearch_option_sgd_ada = opt_dict["linesearch_option_sgd_ada"]
+		else:
+			linesearch_option_sgd_ada=0  
+		score_list = AdaGrad_AdaSVRG(score_list, closure = closure, 
 					batch_size=exp_dict["batch_size"], 
-					max_epoch=exp_dict["max_epoch"], 
-					r = r, adaptive_termination = adaptive_termination, 
+					max_epoch=exp_dict["max_epoch"], max_epoch_sgd=max_epoch_sgd, linesearch_option_sgd_ada=linesearch_option_sgd_ada,
+					r = r, init_step_size=init_step_size, adaptive_termination=adaptive_termination,
+					threshold_at=threshold_at,
 					D = X, labels = y, 											
 					D_test=X_test, labels_test=y_test)
 
 	else:
 		print('Method does not exist')
+		return 1/0
     
 	save_pkl(score_list_path, score_list)  
 

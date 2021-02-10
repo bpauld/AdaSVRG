@@ -6,7 +6,12 @@ LIBSVM_DOWNLOAD_FN = {"rcv1": "rcv1_train.binary.bz2",
                       "a1a": "a1a",
                       "a2a": "a2a",
                       "ijcnn": "ijcnn1.tr.bz2",
-                      "w8a": "w8a"}
+                      "w8a": "w8a",
+                      "a3a":"a3a",
+                      "w1a":"w1a",
+                      "news": "news20.binary.bz2",
+                      "covtype":"covtype.libsvm.binary.scale.bz2",
+                      "phishing": "phishing"}
 
 
 def load_libsvm(name, data_dir):
@@ -28,7 +33,7 @@ def load_libsvm(name, data_dir):
 
 def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0, 
               is_subsample=0, is_kernelize=0,
-              test_prop=0.2, split_seed=9513451, standardize = False):
+              test_prop=0.2, split_seed=9513451, standardize=False, remove_strong_convexity=False):
     
     if (dataset_name != 'synthetic'):
 
@@ -38,8 +43,9 @@ def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0,
 
         # load real dataset
         A = data[0].toarray()
-
-        if dataset_name in ['quantum', 'protein', 'news']:
+        
+        print(A.shape)
+        if dataset_name in ['quantum', 'protein']:
             y = data[1].toarray().ravel()
         else:
             y = data[1]
@@ -53,14 +59,36 @@ def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0,
     if is_subsample == 1:
         A = A[:n, :]
         y = y[:n]
+        
 
     # split dataset into train and test sets
     X_train, X_test, y_train, y_test = train_test_split(A, y, test_size=test_prop, random_state=split_seed)
+        
     
-    #For now no need to standardize
-    #if standardize:
-     #   X_train = (X_train - np.mean(X_train, axis = 0))/ np.std(X_train, axis = 0)
-      #  X_test = (X_test - np.mean(X_train, axis = 0))/ np.std(X_train, axis = 0)
+    if remove_strong_convexity:
+        #for now we do not care about the test set and only focus on changing X_train such that the training objective is not SC
+        U, diag, V = np.linalg.svd(X_train)
+        min_sing_value = min(diag)
+        diag = diag - min_sing_value
+        diag = np.diag(diag)
+        while diag.shape[0] != U.shape[1]:
+            diag = np.append(diag, [np.zeros(diag.shape[1])], axis = 0)
+        X_train = np.dot(U, np.dot(diag, V))     
+        
+    #For now no need to standardize    
+    if standardize:
+        #remove columns with same value everyhwere
+        B = X_train == X_train[0, :]
+        C = B.all(axis=0)
+        X_train = X_train[:, ~C]
+        X_test = X_test[:, ~C]
+        
+        mean = np.mean(X_train, axis = 0)
+        std = np.std(X_train, axis=0)
+        #X_train = (X_train - mean)
+        #X_test = (X_test - mean)
+        #X_train = (X_train - np.mean(X_train, axis = 0))/ np.std(X_train, axis = 0)
+        #X_test = (X_test - np.mean(X_train, axis = 0))/ np.std(X_train, axis = 0)
 
     if is_kernelize == 1:
         sigma_dict = {"mushrooms": 0.5,
@@ -74,6 +102,7 @@ def data_load(data_dir, dataset_name, n=0, d=0, margin=1e-6, false_ratio=0,
         A_test = X_test
 
     print('Loaded ', dataset_name, ' dataset.')
+    print(A_train.shape)
 
     return A_train, y_train, A_test, y_test
 
@@ -93,8 +122,11 @@ def kernelize(X, X_test, dataset_name, data_dir="./Data", sigma=1.0, kernel_type
             X_kernel = RBF_kernel(X, X, sigma=sigma)
             X_test_kernel = RBF_kernel(X_test, X, sigma=sigma)
             print('Formed the kernel matrix')
-
-        pickle.dump((X_kernel, X_test_kernel), open(fname, "wb"))
+        
+        if dataset_name in ["ijcnn"]:
+            pickle.dump((X_kernel, X_test_kernel), open(fname, "wb"), protocol=4)
+        else:
+            pickle.dump((X_kernel, X_test_kernel), open(fname, "wb"))
 
     return X_kernel, X_test_kernel
 
@@ -121,14 +153,14 @@ def create_dataset(n, d, gamma=0, false_ratio=0):
     num_positive = 0
     num_negative = 0
     count = 0
+    nb = 0
 
     X = np.zeros((n, d))
     y = np.zeros((n))
 
-    print(false_ratio, gamma)
 
     while (1):
-
+        nb+=1
         x = np.random.normal(1, 1, (1, d))
         # normalize x s.t. || x ||_2 = 1
         x = x / np.linalg.norm(x)
@@ -138,6 +170,7 @@ def create_dataset(n, d, gamma=0, false_ratio=0):
         sig = np.sign(temp)
 
         if margin > gamma * np.linalg.norm(w_star):
+            #print(count, nb)
 
             if count % 2 == 0:
 

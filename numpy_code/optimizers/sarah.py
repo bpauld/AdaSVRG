@@ -5,7 +5,7 @@ from datasets import *
 from objectives import *
 import time
 
-def sarah(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=100, 
+def SARAH(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=100, 
          r=0, x0=None, verbose=True, D_test=None, labels_test=None):
     """
         SARAH with fixed step size for solving finite-sum problems
@@ -39,29 +39,16 @@ def sarah(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=
                     
     for k in range(max_epoch):
 
-        if num_grad_evals >= 2 * n * max_epoch:
-            # exceeds the number of standard SVRG gradient evaluations (only for batch-size = 1)
-            print('End of budget for gradient evaluations')
-            break
+        
         t_start = time.time()
 
         loss, full_grad = closure(x, D, labels)
-
-        if verbose:
-            output = 'Epoch.: %d, Grad. norm: %.2e' % \
-                     (k, np.linalg.norm(full_grad))
-            output += ', Func. value: %e' % loss
-            output += ', Step size: %e' % step_size
-            output += ', Num gradient evaluations: %d' % num_grad_evals
-            print(output) 
-
-        if np.linalg.norm(full_grad) <= 1e-12:
-            break
 
         num_grad_evals = num_grad_evals + n
 
         score_dict = {"epoch": k}
         score_dict["n_grad_evals"] = num_grad_evals
+        score_dict["n_grad_evals_normalized"] = num_grad_evals / n
         score_dict["train_loss"] = loss
         score_dict["grad_norm"] = np.linalg.norm(full_grad)
         score_dict["train_accuracy"] = accuracy(x, D, labels)
@@ -74,6 +61,23 @@ def sarah(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=
             score_dict["test_loss_log"] = np.log(test_loss)
 
         score_list += [score_dict]
+        
+        
+        if verbose:
+            output = 'Epoch.: %d, Grad. norm: %.2e' % \
+                     (k, np.linalg.norm(full_grad))
+            output += ', Func. value: %e' % loss
+            output += ', Step size: %e' % step_size
+            output += ', Num gradient evaluations: %d' % num_grad_evals
+            print(output) 
+    
+        full_grad_norm = np.linalg.norm(full_grad)
+        if full_grad_norm <= 1e-12:
+            return score_list
+        elif full_grad_norm >= 1e10:
+            return score_list
+        elif np.isnan(full_grad_norm):
+            return score_list
 
         v  = full_grad
         x_prev = np.copy(x) # store the previoous iterate
@@ -91,7 +95,7 @@ def sarah(score_list, closure, batch_size, D, labels, init_step_size, max_epoch=
             # compute the gradients at the current/previous points
             x_grad = closure(x, Di, labels_i)[1]
             x_grad_prev = closure(x_prev, Di, labels_i)[1]
-            num_grad_evals = num_grad_evals + batch_size
+            num_grad_evals = num_grad_evals + 2*batch_size
 
             v = x_grad - x_grad_prev + v            
             x_prev = np.copy(x)
