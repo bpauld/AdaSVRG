@@ -8,7 +8,7 @@ Run the experiments using the command below:
 python trainval.py -e $exp_{BENCHMARK} -sb ${SAVEDIR_BASE} -r 1
 ``
 
-with the placeholders defined as follows.
+with the placeholders defined as follows. Use the notebook `plot-experiments.ipynb` to reproduce the plots.
 
 **{BENCHMARK}**
 
