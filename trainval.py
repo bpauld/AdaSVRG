@@ -12,6 +12,7 @@ from optimizers.sgd import *
 from optimizers.adagrad import *
 from optimizers.adagrad_adasvrg import *
 from optimizers.svrg_loopless import *
+from optimizers.adasvrg_general import *
 
 import argparse
 import exp_configs
@@ -181,7 +182,26 @@ def trainval(exp_dict, savedir_base, reset=False):
                            r = r, init_step_size=init_step_size, 
                            linesearch_option = linesearch_option,
                            adaptive_termination = adaptive_termination,
-                           D_test=X_test, labels_test=y_test, threshold_at=threshold_at)      
+                           D_test=X_test, labels_test=y_test, threshold_at=threshold_at)     
+		
+	elif opt_dict["name"] == 'AdaSVRG_General':
+		init_step_size = opt_dict["init_step_size"]
+		r = opt_dict["r"]		
+		linesearch_option = opt_dict["linesearch_option"]
+		variant = opt_dict["variant"]
+		adaptive_termination = opt_dict["adaptive_termination"]
+		if "threshold_at" in opt_dict.keys():
+			threshold_at = opt_dict["threshold_at"]
+		else:
+			threshold_at = 1           
+
+		score_list = AdaSVRG_General(score_list, closure=closure,batch_size=exp_dict["batch_size"], 
+						   max_epoch=exp_dict["max_epoch"],                                                
+                           D=X, labels=y, 
+                           r = r, init_step_size=init_step_size, variant=variant,
+                           linesearch_option = linesearch_option,
+                           adaptive_termination = adaptive_termination,
+                           D_test=X_test, labels_test=y_test, threshold_at=threshold_at)
 
 
 	elif opt_dict["name"] == "SGD":		
