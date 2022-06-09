@@ -10,7 +10,7 @@ def get_benchmark(benchmark,
                   losses=["logistic_loss", "squared_loss", "squared_hinge_loss"]
                  ):
     
-    if benchmark == "mushrooms":
+    if benchmark in ["mushrooms", "mushrooms_diagonal"]:
         return {"dataset":["mushrooms"],
                 "loss_func": losses,
                 "opt": opt_list,
@@ -28,7 +28,7 @@ def get_benchmark(benchmark,
                 "max_epoch":max_epoch,
                 "runs":runs}
     
-    elif benchmark == "a1a":
+    elif benchmark in ["a1a", "a1a_diagonal"]:
         return {"dataset":["a1a"],
                 "loss_func": losses,
                 "opt": opt_list,
@@ -46,7 +46,7 @@ def get_benchmark(benchmark,
                 "max_epoch":max_epoch,
                 "runs":runs}
     
-    elif benchmark == "w8a":
+    elif benchmark in ["w8a", "w8a_diagonal"]:
         return {"dataset":["w8a"],
                 "loss_func": losses,
                 "opt": opt_list,
@@ -103,10 +103,27 @@ EXP_GROUPS = {}
 MAX_EPOCH = 50
 RUNS = [0, 1, 2, 3, 4]
 benchmarks_list = ["mushrooms", "ijcnn", "a1a", "a2a", "w8a", "rcv1", "covtype", "phishing"]
+benchmarks_diagonal_list = ["a1a_diagonal", "mushrooms_diagonal", "w8a_diagonal"]
 benchmarks_interpolation_list = ["synthetic_interpolation"]
 
-for benchmark in benchmarks_list + benchmarks_interpolation_list:
+for benchmark in benchmarks_list + benchmarks_diagonal_list + benchmarks_interpolation_list:
     EXP_GROUPS["exp_%s" % benchmark] = []
+    
+    
+#=== Setting up scalar vs diagonal experiments ===
+
+for batch_size in [64]:
+    opt_list = []
+    for variant in ["diagonal", "scalar"]:
+        opt_list += [{'name':'AdaSVRG_General',
+                 'r':1/batch_size,
+                 'init_step_size':None,
+                 'linesearch_option':1,
+                 'adaptive_termination':0,
+                 'variant':variant}]
+        
+    for benchmark in benchmarks_diagonal_list:
+        EXP_GROUPS['exp_%s' % benchmark] += hu.cartesian_exp_group(get_benchmark(benchmark, opt_list, batch_size=batch_size, max_epoch=[50], runs=[0, 1, 2, 3, 4], losses=['logistic_loss']))
 
 #=== Setting up main experiments ===
 
