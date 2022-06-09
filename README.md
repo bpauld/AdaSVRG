@@ -19,6 +19,9 @@ Defines the dataset and regularization constant for the experiments
 
 - `synthetic_interpolation` for the interpolation experiments.
 
+
+- `a1a_diagonal`, `w8a_diagonal`, `mushrooms_diagonal` for the experiments comparing the scalar and diagonal variants of AdaSVRG.
+
 **{SAVEDIR_BASE}**
 
 Defines the absolute path to where the results will be saved.
